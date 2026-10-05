@@ -1,0 +1,6 @@
+{
+  "appId": "com.hun0fx.flipbook",
+  "appName": "Flipbook",
+  "webDir": "www",
+  "android": { "backgroundColor": "#1C1F27" }
+}

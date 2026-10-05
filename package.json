@@ -1,0 +1,35 @@
+{
+  "name": "flipbook",
+  "version": "1.0.0",
+  "description": "플립북 — 프레임 애니메이션 드로잉",
+  "main": "electron/main.js",
+  "author": "hun0fx",
+  "license": "UNLICENSED",
+  "scripts": {
+    "prep": "node -e \"require('fs').copyFileSync('node_modules/jszip/dist/jszip.min.js','www/jszip.min.js')\"",
+    "desktop": "npm run prep && electron .",
+    "build:win": "npm run prep && electron-builder --win --publish never",
+    "build:android": "npm run prep && npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/share": "^6.0.2",
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.hun0fx.flipbook",
+    "productName": "Flipbook",
+    "directories": { "output": "dist" },
+    "files": ["electron/**", "www/**", "package.json"],
+    "win": { "target": ["portable", "nsis"] },
+    "portable": { "artifactName": "Flipbook-${version}-portable.exe" },
+    "nsis": { "artifactName": "Flipbook-${version}-setup.exe", "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}
