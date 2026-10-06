@@ -135,6 +135,15 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
 #refChip{position:absolute;left:50%;top:10px;transform:translateX(-50%);display:none;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--accent);
   border-radius:12px;padding:6px 6px 6px 12px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:calc(100% - 20px)}
 #refChip.on{display:flex}
+#recBtn{position:relative}
+#recBtn.rec{color:#E5484D}
+#recBtn.rec .recDot{animation:recPulse 1.2s ease-in-out infinite}
+@keyframes recPulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#recBtn.rec .recDot{animation:none}}
+#recCount{position:absolute;right:-2px;bottom:0;font-size:9px;font-weight:600;line-height:1;padding:1px 3px;border-radius:5px;background:#E5484D;color:#fff;display:none}
+#recBtn.rec #recCount{display:block}
+#recPop{width:290px}
+#recPop .row label{flex:1}
 .lops .tb{padding:0 9px}
 .lops .ib{width:32px}
 .lrow{display:flex;align-items:center;gap:6px;padding:6px;border-radius:10px;cursor:pointer}
@@ -221,6 +230,7 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
     </div>
     <div class="sp"></div>
     <div class="grp">
+      <button class="ib" id="recBtn" title="타임랩스 녹화" aria-label="타임랩스 녹화"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle class="recDot" cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg><span id="recCount"></span></button>
       <button class="ib" id="refBtn" title="레퍼런스 이미지" aria-label="레퍼런스 이미지"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4.5 3.5"/></svg></button>
       <button class="ib on" id="onionBtn" title="어니언 스킨" aria-label="어니언 스킨"><svg viewBox="0 0 24 24"><circle cx="9" cy="12" r="5.5"/><circle cx="15" cy="12" r="5.5"/></svg></button>
     </div>
@@ -287,6 +297,18 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
 </div>
 
 <div class="pop" id="subPop"><h3 id="subTitle"></h3><div id="subList"></div></div>
+
+<div class="pop" id="recPop">
+  <h3>타임랩스</h3>
+  <p id="recInfo" style="margin:0 0 8px;font-size:12px;color:var(--muted)"></p>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button class="tb primary" id="recToggle">녹화 시작</button>
+    <button class="tb" id="recExport">영상으로 저장</button>
+    <button class="tb danger" id="recClear">지우기</button>
+  </div>
+  <div class="row"><label for="recLen">영상 길이</label><select class="tb" id="recLen"><option value="auto">자동 (한 획 = 1/30초)</option><option value="15">15초</option><option value="30" selected>30초</option><option value="60">60초</option></select></div>
+  <div class="row"><label for="recEnd">마지막 장면 유지</label><select class="tb" id="recEnd"><option value="0">없음</option><option value="2" selected>2초</option><option value="4">4초</option></select></div>
+</div>
 
 <div class="pop" id="refPop">
   <h3>레퍼런스</h3>
@@ -971,7 +993,15 @@ function applyEntry(u, dir){
 }
 function undo(){ if(S.playing) stopPlay(); while(undoStack.length){ const u = undoStack.pop(); if(applyEntry(u,-1)){ redoStack.push(u); break; } } syncUndo(); }
 function redo(){ if(S.playing) stopPlay(); while(redoStack.length){ const u = redoStack.pop(); if(applyEntry(u,1)){ undoStack.push(u); break; } } syncUndo(); }
-function syncUndo(){ $('#undoBtn').disabled = !undoStack.length; $('#redoBtn').disabled = !redoStack.length; }
+// keep undo history under a memory budget (big raster strokes store pixel snapshots)
+const UNDO_BUDGET = 160*1024*1024;
+const entryBytes = u => u.kind==='px' ? (u.before.data.length + u.after.data.length) : u.kind==='multi' ? u.list.reduce((a,e) => a + entryBytes(e), 0) : 2048;
+function trimUndo(){
+  let total = 0; for(const u of undoStack) total += entryBytes(u); for(const u of redoStack) total += entryBytes(u);
+  while(total > UNDO_BUDGET && redoStack.length){ total -= entryBytes(redoStack.shift()); }
+  while(total > UNDO_BUDGET && undoStack.length > 1){ total -= entryBytes(undoStack.shift()); }
+}
+function syncUndo(){ trimUndo(); tlCapture(); $('#undoBtn').disabled = !undoStack.length; $('#redoBtn').disabled = !redoStack.length; }
 
 /* ---------- fill & pick ---------- */
 function hexToRgb(h){ const n = parseInt(h.slice(1),16); return [n>>16&255, n>>8&255, n&255]; }
@@ -1312,7 +1342,7 @@ function openPop(pop, anchor, side){
 function closePops(){ $$('.pop.open').forEach(p => p.classList.remove('open')); }
 $('#colorBtn').addEventListener('click', e => { e.stopPropagation(); buildSwatches(); openPop($('#colorPop'), e.currentTarget, 'right'); });
 $('#layerBtn').addEventListener('click', e => { e.stopPropagation(); buildLayers(); openPop($('#layerPop'), e.currentTarget, 'up'); });
-document.addEventListener('pointerdown', e => { if(!e.target.closest('.pop') && !e.target.closest('#colorBtn') && !e.target.closest('#layerBtn') && !e.target.closest('#refBtn') && !e.target.closest('.grp-btn')) closePops(); });
+document.addEventListener('pointerdown', e => { if(!e.target.closest('.pop') && !e.target.closest('#colorBtn') && !e.target.closest('#layerBtn') && !e.target.closest('#refBtn') && !e.target.closest('#recBtn') && !e.target.closest('.grp-btn')) closePops(); });
 
 /* ---------- layers ---------- */
 function buildLayers(){
@@ -1683,7 +1713,7 @@ async function save(){
       st:{ fps:S.fps, cur:S.cur, color:S.color, size:S.size, opacity:S.opacity, smooth:S.smooth, stab:S.stab, rope:S.rope, ropeEnd:S.ropeEnd, onion:S.onion, onionN:S.onionN, onionFront:!!S.onionFront, onionAlpha:S.onionAlpha, onionFalloff:S.onionFalloff, onionBlend:S.onionBlend, vecSmooth:S.vecSmooth, taper:S.taper, taperLen:S.taperLen, rotate:S.rotate!==false, bg:S.bg, bgColor:S.bgColor, finger:S.finger, palm:S.palm, penBtn:S.penBtn, sv:3, recent:S.recent, brushMode:S.brushMode, eraserMode:S.eraserMode } };
     await kvPut('meta', meta);
     const ks = await kvKeys();
-    for(const k of ks) if(!want.has(k) && !String(k).startsWith('ref')) await kvDel(k);
+    for(const k of ks) if(!want.has(k) && !String(k).startsWith('ref') && !String(k).startsWith('tl')) await kvDel(k);
     setSaveState('저장됨');
   }catch(err){ console.warn(err); setSaveState('이 브라우저에선 저장이 안 돼요'); }
   saving = false;
@@ -2101,6 +2131,87 @@ async function openCrop(){
 }
 $('#cropBtn').onclick = openCrop;
 
+/* ---------- timelapse: a snapshot of the edited frame after every stroke / edit, played back fast as a video ---------- */
+const TL = { on:false, n:0, w:0, h:0 };
+let tlTimer = null, tlBusy = false, tlLastKey = '';
+const TL_MAX = 720;
+function tlCapture(){
+  if(!TL.on || !loaded) return;
+  clearTimeout(tlTimer); tlTimer = setTimeout(tlSnap, 60);   // let the canvas settle; coalesce bursts
+}
+async function tlSnap(){
+  if(!TL.on || tlBusy) return; tlBusy = true;
+  try{
+    const k = Math.min(1, TL_MAX/Math.max(W,H)), w = Math.round(W*k/2)*2, h = Math.round(H*k/2)*2;
+    if(TL.n && (TL.w!==w || TL.h!==h)){ TL.w = w; TL.h = h; }   // canvas was resized: later shots use the new size
+    TL.w = w; TL.h = h;
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+    x.fillStyle = bgFill() || '#ffffff'; x.fillRect(0,0,w,h);
+    compFrameAt(x, frames[S.cur], w/W, w, h);
+    const b = await new Promise(r => c.toBlob(r, 'image/webp', 0.82)); if(!b) return;
+    await kvPut('tl:'+TL.n, b); TL.n++; await kvPut('tlmeta', { ...TL }); syncRec();
+  }catch(e){ console.warn(e); }
+  finally{ tlBusy = false; }
+}
+async function tlLoad(){ try{ const m = await kvGet('tlmeta'); if(m) Object.assign(TL, m); }catch(e){} syncRec(); }
+function syncRec(){
+  $('#recBtn').classList.toggle('rec', TL.on); $('#recCount').textContent = TL.n > 999 ? '999+' : TL.n;
+  $('#recToggle').textContent = TL.on ? '일시정지' : (TL.n ? '이어서 녹화' : '녹화 시작');
+  $('#recInfo').textContent = TL.n ? `${TL.n}컷 기록됨${TL.on ? ' · 녹화 중 (획을 그릴 때마다 한 컷)' : ' · 일시정지'}` : '켜 두면 획을 그리거나 고칠 때마다 한 컷씩 기록해서, 그리는 과정을 빠른 영상으로 만들어요. 작업 화면에는 표시되지 않아요.';
+  $('#recExport').disabled = $('#recClear').disabled = !TL.n;
+}
+$('#recBtn').addEventListener('click', e => { e.stopPropagation(); syncRec(); openPop($('#recPop'), e.currentTarget, 'down'); });
+$('#recToggle').onclick = async () => {
+  TL.on = !TL.on; await kvPut('tlmeta', { ...TL }).catch(()=>{}); syncRec();
+  if(TL.on){ if(!TL.n) tlCapture(); toast('타임랩스 녹화를 시작했어요'); } else toast('타임랩스를 일시정지했어요');
+};
+$('#recClear').onclick = async () => {
+  closePops();
+  if(!await askConfirm('타임랩스 지우기', `기록된 ${TL.n}컷을 지울까요? 그림에는 영향이 없어요.`, '지우기', true)) return;
+  try{ const ks = await kvKeys(); for(const k of ks) if(String(k).startsWith('tl:')) await kvDel(k); }catch(e){}
+  TL.n = 0; await kvPut('tlmeta', { ...TL }).catch(()=>{}); syncRec(); toast('타임랩스를 지웠어요');
+};
+$('#recExport').onclick = async () => {
+  if(!TL.n || exporting) return; closePops();
+  if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream){ toast('이 환경은 동영상 저장을 지원하지 않아요'); return; }
+  const types = [['video/mp4;codecs=avc1','mp4'],['video/mp4','mp4'],['video/webm;codecs=vp9','webm'],['video/webm','webm']];
+  const t = types.find(([m]) => MediaRecorder.isTypeSupported(m)); if(!t){ toast('지원되는 동영상 형식이 없어요'); return; }
+  exporting = true;
+  try{
+    const FPS = 30, lenSel = $('#recLen').value, hold = +$('#recEnd').value;
+    // how many video frames each shot gets (or how many shots to skip) for the chosen length
+    const target = lenSel==='auto' ? TL.n : Math.max(1, (+lenSel)*FPS - hold*FPS);
+    const step = TL.n / target;   // >1: skip shots, <1: hold shots
+    const w = TL.w || 720, h = TL.h || 406;
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+    const stream = c.captureStream(0), track = stream.getVideoTracks()[0];
+    const rec = new MediaRecorder(stream, { mimeType:t[0], videoBitsPerSecond:6e6 }); const chunks = [];
+    rec.ondataavailable = e => e.data.size && chunks.push(e.data); const done = new Promise(r => rec.onstop = r);
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    let cur = null;
+    // every tick repaints the canvas: some encoders drop frames from a canvas that hasn't changed
+    const paint = () => { x.fillStyle = '#000'; x.fillRect(0,0,w,h); if(!cur) return; const k = Math.min(w/cur.width, h/cur.height);
+      x.drawImage(cur, (w-cur.width*k)/2, (h-cur.height*k)/2, cur.width*k, cur.height*k); };
+    const show = async i => { const b = await kvGet('tl:'+i); if(!b) return; const bmp = await createImageBitmap(b);
+      if(cur && cur.close) cur.close(); cur = bmp; };
+    await show(0); paint(); rec.start(100); track.requestFrame && track.requestFrame();
+    const total = Math.round(target); let last = -1;
+    for(let f=0; f<total; f++){
+      const i = Math.min(TL.n-1, Math.floor(f*step));
+      const t0 = performance.now();
+      if(i !== last){ await show(i); last = i; }
+      paint(); track.requestFrame && track.requestFrame();
+      if(f % 60 === 0) toast(`타임랩스 만드는 중… ${Math.round(f/total*100)}%`);
+      await sleep(Math.max(0, 1000/FPS - (performance.now()-t0)));
+    }
+    if(last !== TL.n-1) await show(TL.n-1);
+    for(let f=0; f<Math.max(1, hold*FPS); f++){ paint(); track.requestFrame && track.requestFrame(); await sleep(1000/FPS); }
+    rec.stop(); await done;
+    await saveFile(`flipbook_timelapse_${stamp()}.${t[1]}`, new Blob(chunks, { type:t[0].split(';')[0] }));
+  }catch(err){ console.warn(err); toast('타임랩스 저장에 실패했어요'); }
+  exporting = false;
+};
+
 /* ---------- reference image / GIF / sprite sheet / video (kept apart from layers, never exported) ---------- */
 const REF = { frames:[], fw:0, fh:0, x:0, y:0, s:1, op:0.5, vis:true, front:false, offset:0, hold:1, name:'' };
 let refEdit = false;
@@ -2316,6 +2427,7 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add
   sizeCanvases();
   const ok = await load();
   await loadRef();
+  await tlLoad();
   if(!ok){ const L = newLayer('레이어 1'); layers=[L]; curLayer=L.id; frames=[newFrame(), newFrame()]; S.cur=0; }
   loaded = true;
   $('#colorBtn').style.background = S.color; $('#colorIn').value = S.color;
