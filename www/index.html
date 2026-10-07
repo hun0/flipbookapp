@@ -35,6 +35,17 @@ button,select,input{font:inherit;color:inherit}
 /* top bar */
 #top{grid-column:1/3;display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line)}
 #brand{font-weight:600;font-size:15px;display:flex;align-items:baseline;gap:8px;min-width:0}
+#projBtn{display:flex;align-items:center;gap:4px;border:0;background:var(--panel2);border-radius:9px;padding:5px 8px 5px 10px;font-weight:600;cursor:pointer;min-width:0;max-width:38vw}
+#projName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:480px){ #saveState{display:none} #projBtn{max-width:30vw} }
+#projList{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.prow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);cursor:pointer}
+.prow.on{border-color:var(--accent)}
+.prow img,.prow .noimg{width:72px;height:44px;object-fit:contain;background:#000;border-radius:6px;flex:none}
+.prow .pm{flex:1;min-width:0;display:flex;flex-direction:column}
+.prow .pm b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .pm small{color:var(--muted);font-size:11.5px}
+.prow .ib{width:34px;height:34px}
 #saveState{font-size:12px;color:var(--muted);font-weight:400;white-space:nowrap}
 .sp{flex:1}
 .grp{display:flex;align-items:center;gap:2px}
@@ -223,7 +234,7 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
 <body>
 <div id="app">
   <header id="top">
-    <div id="brand"><span class="t">플립북</span><span id="saveState">불러오는 중</span></div>
+    <div id="brand"><button id="projBtn" title="프로젝트 목록"><span id="projName">플립북</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button><span id="saveState">불러오는 중</span></div>
     <div class="grp" style="margin-left:8px">
       <button class="ib" id="undoBtn" title="실행 취소 (두 손가락 탭)" aria-label="실행 취소"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
       <button class="ib" id="redoBtn" title="다시 실행 (Ctrl+Shift+Z)" aria-label="다시 실행"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
@@ -340,6 +351,12 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
     <div class="sp"></div>
     <button class="tb" id="lDel">삭제</button>
   </div>
+  <div id="tintBox" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">
+    <div style="display:flex;align-items:center;gap:6px"><b style="flex:1;font-size:13px">레이어 색 <span id="tintFor" style="font-weight:400;color:var(--muted)"></span></b>
+      <select class="tb" id="tintMode" aria-label="레이어 색 방식"><option value="off">원래 색</option><option value="replace">단색으로</option><option value="multiply">색 곱하기</option></select>
+      <input type="color" id="tintColor" value="#ff6a2a" aria-label="레이어 색"></div>
+    <p style="margin:6px 2px 0;font-size:11.5px;color:var(--muted)">단색: 그림 전체를 이 색으로 · 곱하기: 명암은 살리고 색만 입혀요. 원본은 그대로라 언제든 되돌릴 수 있어요.</p>
+  </div>
   <div id="glowBox" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">
     <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:13px">글로우 <span id="glowFor" style="font-weight:400;color:var(--muted)"></span></b>
       <button class="tb" id="glowToggle">끔</button></div>
@@ -384,12 +401,24 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
       <input type="color" id="bgColorIn" value="#000000" style="display:none;margin-left:6px" aria-label="배경색"></div>
     <div class="opt hide-l"><div class="lbl">재생 속도</div>
       <select class="tb" id="fpsSel2"><option value="6">6 fps</option><option value="8">8 fps</option><option value="12">12 fps</option><option value="15">15 fps</option><option value="24">24 fps</option><option value="30">30 fps</option></select></div>
-    <div class="opt"><div class="lbl">새 작품<small>지금 작업은 지워져요</small></div>
+    <div class="opt"><div class="lbl">새 프로젝트<small>지금 작업은 그대로 두고 새로 만들어요</small></div>
       <select class="tb" id="newSize"><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="1024x1024">1024 × 1024</option><option value="512x512">512 × 512</option><option value="720x1280">720 × 1280</option></select></div>
     <div class="opt"><div class="lbl">정사각 크롭 · 해상도 맞추기<small>모든 프레임·레이어의 그림이 다 들어가게 잘라서 256/512/1024로 바꿔요</small></div>
       <button class="tb" id="cropBtn">맞추기…</button></div>
     <div class="acts"><button class="tb" id="newBtn">새로 만들기</button><button class="tb primary" id="setClose">닫기</button></div>
+    <p id="verLine" style="font-weight:600;color:var(--ink)"></p>
     <p>세 손가락 탭: 브러시 ↔ 지우개 전환 · 두 손가락 탭: 실행 취소<br>단축키: B 펜 · M 마커 · L 올가미 채우기 · K 올가미 지우개 · J 획 지우개 · X 브러시/지우개 전환 · E 지우개 · G 채우기 · I 스포이드 · R 회전 · 0 화면 맞춤 · , . 프레임 이동 · Enter 재생 · D 복제</p>
+  </div>
+</div>
+
+<div class="veil" id="projVeil">
+  <div class="sheet" role="dialog" aria-label="프로젝트">
+    <h2>프로젝트</h2>
+    <div id="projList"></div>
+    <div class="opt"><div class="lbl">새 프로젝트<small>지금 작업은 그대로 저장돼요</small></div>
+      <div style="display:flex;gap:6px"><select class="tb" id="projNewSize"><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="1024x1024">1024 × 1024</option><option value="512x512">512 × 512</option><option value="720x1280">720 × 1280</option></select>
+      <button class="tb primary" id="projNew">만들기</button></div></div>
+    <div class="acts"><button class="tb" id="projClose">닫기</button></div>
   </div>
 </div>
 
@@ -399,7 +428,9 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
     <div class="opt"><div class="lbl">배경</div><select class="tb" id="expBg"><option value="trans">투명</option><option value="bg">배경색 포함</option></select></div>
     <div class="opt"><div class="lbl">크기</div><select class="tb" id="expScale"><option value="4">400% (벡터만 선명)</option><option value="2">200% (벡터만 선명)</option><option value="1" selected>100%</option><option value="0.5">50%</option><option value="0.25">25%</option></select></div>
     <button class="big" data-exp="sheet"><b>스프라이트 시트 PNG</b><small>모든 프레임을 한 장에 격자로 배치</small></button>
-    <button class="big" data-exp="seq"><b>PNG 시퀀스 ZIP</b><small>프레임마다 한 장씩</small></button>
+    <button class="big" data-exp="seq"><b>PNG 시퀀스 ZIP</b><small>프레임마다 한 장씩 · 아래에서 레이어별로 나눌지 골라요</small></button>
+    <div class="opt"><div class="lbl">PNG 시퀀스 구성<small>레이어별: 보이는 레이어마다 폴더 하나씩</small></div>
+      <select class="tb" id="expSeqMode"><option value="layers">레이어별</option><option value="both">레이어별 + 합친 그림</option><option value="merged">합친 그림만</option></select></div>
     <button class="big" data-exp="video"><b>동영상</b><small>MP4 또는 WebM, 배경색이 포함돼요</small></button>
     <div class="acts"><button class="tb" id="expClose">닫기</button></div>
   </div>
@@ -425,7 +456,7 @@ const S = { fps:12, cur:0, tool:'pen', color:'#ffffff', size:6, opacity:1, smoot
 let penSeen = false;
 let uidc = 1;
 const nid = () => Date.now().toString(36) + (uidc++).toString(36);
-const newLayer = (name, kind='raster') => ({ id:nid(), name, visible:true, opacity:1, kind, glow:{ on:false, size:18, strength:0.9 } });
+const newLayer = (name, kind='raster') => ({ id:nid(), name, visible:true, opacity:1, kind, glow:{ on:false, size:18, strength:0.9 }, tint:null, tintMode:'replace' });
 const bgFill = () => S.bg==='black' ? '#000000' : S.bg==='white' ? '#ffffff' : S.bg==='custom' ? S.bgColor : null;
 const isVec = lid => { const L = layers.find(l=>l.id===lid); return !!L && L.kind==='vector'; };
 const newFrame = () => ({ id:nid(), cv:{} });
@@ -464,12 +495,31 @@ function drawGlow(ctx, src, L, w, h){   // ctx transform must map document space
   ctx.restore();
 }
 const bumpVer = c => { if(c) c._ver = (c._ver||0) + 1; };
+/* layer colour: recolour a whole layer without touching its pixels (replace = flat colour, multiply = keep shading) */
+function applyTint(cv, L){
+  const x = cv.getContext('2d'); x.save(); x.setTransform(1,0,0,1,0,0); x.globalAlpha = 1;
+  if(L.tintMode==='multiply'){
+    const keep = scratch(cv.width, cv.height, 'tintkeep'), k = keep.getContext('2d');
+    k.setTransform(1,0,0,1,0,0); k.clearRect(0,0,keep.width,keep.height); k.drawImage(cv,0,0);
+    x.globalCompositeOperation = 'multiply'; x.fillStyle = L.tint; x.fillRect(0,0,cv.width,cv.height);
+    x.globalCompositeOperation = 'destination-in'; x.drawImage(keep,0,0);
+  } else { x.globalCompositeOperation = 'source-in'; x.fillStyle = L.tint; x.fillRect(0,0,cv.width,cv.height); }
+  x.restore();
+}
+function tintedDoc(c, L){
+  const key = (c._ver||0)+':'+L.tint+':'+L.tintMode+':'+c.width+'x'+c.height;
+  if(c._tint && c._tint.key===key) return c._tint.cv;
+  const cv = c._tint ? c._tint.cv : document.createElement('canvas');
+  cv.width = c.width; cv.height = c.height; cv.getContext('2d').drawImage(c,0,0); applyTint(cv, L); bumpVer(cv);
+  c._tint = { key, cv }; return cv;
+}
+const layerSrc = (c, L) => (c && L.tint) ? tintedDoc(c, L) : c;
 
 function compFrame(ctx, f, live, withGlow){
   if(!f) return;
   for(const L of layers){
     if(!L.visible) continue;
-    const c = f.cv[L.id];
+    const c0 = f.cv[L.id], c = withGlow ? layerSrc(c0, L) : c0;
     if(c){ ctx.globalAlpha = L.opacity; ctx.drawImage(c,0,0); }
     if(live && drawing && drawing.mode==='pen' && drawing.f===f && drawing.lid===L.id){
       ctx.globalAlpha = L.opacity * S.opacity; ctx.drawImage(strokeCv,0,0);
@@ -549,16 +599,30 @@ function drawFrameScreen(f, live){
         lx.setTransform(...T); lx.save(); lx.beginPath(); lx.rect(0,0,W,H); lx.clip(); drawVecItem(lx, li); lx.restore();
         src = ls;
       }
+      if(L.tint){
+        const ts = scratch(view.width, view.height, 'tintscr'), tx = ts.getContext('2d');
+        tx.setTransform(1,0,0,1,0,0); tx.globalCompositeOperation = 'source-over'; tx.clearRect(0,0,ts.width,ts.height); tx.drawImage(src,0,0);
+        applyTint(ts, L); src = ts;
+      }
       vctx.save(); vctx.setTransform(1,0,0,1,0,0); vctx.globalAlpha = L.opacity; vctx.drawImage(src,0,0); vctx.restore();
-      if(L.glow && L.glow.on && f.cv[L.id]){ vctx.save(); vctx.setTransform(...T); drawGlow(vctx, f.cv[L.id], L); vctx.restore(); }
+      if(L.glow && L.glow.on && f.cv[L.id]){ vctx.save(); vctx.setTransform(...T); drawGlow(vctx, layerSrc(f.cv[L.id], L), L); vctx.restore(); }
     } else {
       const c = f.cv[L.id];
+      const liveHere = live && drawing && !drawing.vec && drawing.f===f && drawing.lid===L.id && (drawing.mode==='pen' || drawing.mode==='erase');
       vctx.save(); vctx.setTransform(...T); vctx.imageSmoothingEnabled = V.s < 2;
-      if(c){ vctx.globalAlpha = L.opacity; vctx.drawImage(c,0,0); }
-      if(live && drawing && drawing.mode==='pen' && !drawing.vec && drawing.f===f && drawing.lid===L.id){
-        vctx.globalAlpha = L.opacity * S.opacity; vctx.drawImage(strokeCv,0,0);
+      if(L.tint && liveHere){
+        // tinted layer while drawing: tint the layer + the stroke in progress together
+        const t = scratch(W, H, 'tintlive'), tx = t.getContext('2d');
+        tx.setTransform(1,0,0,1,0,0); tx.globalCompositeOperation = 'source-over'; tx.clearRect(0,0,W,H);
+        if(c) tx.drawImage(c,0,0);
+        if(drawing.mode==='pen'){ tx.globalAlpha = S.opacity; tx.drawImage(strokeCv,0,0); tx.globalAlpha = 1; }
+        applyTint(t, L); vctx.globalAlpha = L.opacity; vctx.drawImage(t,0,0);
+      } else {
+        const src = layerSrc(c, L);
+        if(src){ vctx.globalAlpha = L.opacity; vctx.drawImage(src,0,0); }
+        if(liveHere && drawing.mode==='pen'){ vctx.globalAlpha = L.opacity * S.opacity; vctx.drawImage(strokeCv,0,0); }
       }
-      if(c) drawGlow(vctx, c, L);
+      if(c) drawGlow(vctx, layerSrc(c, L), L);
       vctx.restore();
     }
   }
@@ -681,20 +745,22 @@ function smoothLine(raw, k){
   return flat(X,Y,Wd);
 }
 /* same smoothing for a closed lasso outline [x,y,...]: drop jitter, average around the loop, round the corners */
+/* lasso outline smoothing. Treated as an open stroke: the start point and the pen tip stay exactly where they are
+   (smoothing around the loop used to pull the start and the pen tip toward each other while drawing). */
 function smoothPoly(raw, k){
   let n = raw.length/2; if(n < 4 || k <= 0) return raw;
   let X = [raw[0]], Y = [raw[1]];
-  for(let i=1;i<n;i++){ const x = raw[i*2], y = raw[i*2+1], j = X.length-1; if(Math.hypot(x-X[j], y-Y[j]) < 0.8) continue; X.push(x); Y.push(y); }
+  for(let i=1;i<n;i++){ const x = raw[i*2], y = raw[i*2+1], j = X.length-1; if(Math.hypot(x-X[j], y-Y[j]) < 0.8 && i<n-1) continue; X.push(x); Y.push(y); }
   n = X.length; if(n < 4) return raw;
-  const rad = Math.max(1, Math.min(Math.floor((n-1)/2), Math.round(k*4)));
-  const avg = A => { const o = new Array(n);
-    for(let i=0;i<n;i++){ let sum = 0; for(let j=-rad;j<=rad;j++) sum += A[(i+j+n)%n]; o[i] = sum/(2*rad+1); } return o; };
+  const rad = Math.max(1, Math.round(k*4));
+  const avg = A => { const o = A.slice();
+    for(let i=1;i<n-1;i++){ const r = Math.min(rad, i, n-1-i); let sum = 0; for(let j=i-r;j<=i+r;j++) sum += A[j]; o[i] = sum/(2*r+1); } return o; };
   for(let pass=0; pass<(k < 0.5 ? 1 : 2); pass++){ X = avg(X); Y = avg(Y); }
-  const out = [];
+  const out = [X[0], Y[0]];
   if(n < 800){
-    for(let i=0;i<n;i++){ const a = i, b = (i+1)%n;
-      out.push(.75*X[a]+.25*X[b], .75*Y[a]+.25*Y[b], .25*X[a]+.75*X[b], .25*Y[a]+.75*Y[b]); }
-  } else for(let i=0;i<n;i++) out.push(X[i], Y[i]);
+    for(let i=0;i<n-1;i++){ out.push(.75*X[i]+.25*X[i+1], .75*Y[i]+.25*Y[i+1], .25*X[i]+.75*X[i+1], .25*Y[i]+.75*Y[i+1]); }
+  } else for(let i=1;i<n-1;i++) out.push(X[i], Y[i]);
+  out.push(X[n-1], Y[n-1]);
   return out;
 }
 // the lasso outline shown while drawing and the one committed come from this one function, so they match exactly
@@ -1362,6 +1428,7 @@ function buildLayers(){
     op.onpointerdown = ev => ev.stopPropagation();
     row.append(eye, nm);
     if(L.kind==='vector'){ const bd = document.createElement('span'); bd.className='badge'; bd.textContent='벡터'; row.append(bd); }
+    if(L.tint){ const bd = document.createElement('span'); bd.className='badge'; bd.textContent='색'; bd.style.background = L.tint; bd.style.color = '#000'; row.append(bd); }
     if(L.glow && L.glow.on){ const bd = document.createElement('span'); bd.className='badge'; bd.textContent='글로우'; row.append(bd); }
     row.append(op);
     row.onclick = () => { curLayer = L.id; buildLayers(); syncLayerBtn(); };
@@ -1371,7 +1438,21 @@ function buildLayers(){
   syncGlowUI();
 }
 function curL(){ return layers.find(l=>l.id===curLayer); }
-function syncGlowUI(){
+function syncTintUI(){
+  const L = curL(); if(!L) return;
+  $('#tintFor').textContent = '· ' + L.name;
+  $('#tintMode').value = L.tint ? (L.tintMode || 'replace') : 'off';
+  $('#tintColor').value = L.tint || L._lastTint || '#ff6a2a';
+  $('#tintColor').disabled = !L.tint;
+}
+$('#tintMode').onchange = e => { const L = curL(); const v = e.target.value;
+  if(v==='off'){ if(L.tint) L._lastTint = L.tint; L.tint = null; } else { L.tint = L.tint || L._lastTint || $('#tintColor').value; L.tintMode = v; }
+  buildLayers(); render(); allThumbs(); scheduleSave(); };
+let tintRaf = 0;
+$('#tintColor').oninput = e => { const L = curL(); if(!L.tint) return; L.tint = e.target.value; cancelAnimationFrame(tintRaf); tintRaf = requestAnimationFrame(render); };
+$('#tintColor').onchange = () => { allThumbs(); buildLayers(); scheduleSave(); };
+$('#tintColor').onpointerdown = e => e.stopPropagation();
+function syncGlowUI(){ syncTintUI();
   const L = curL(); if(!L) return; L.glow = L.glow || { on:false, size:18, strength:0.9 };
   $('#glowFor').textContent = '· ' + L.name;
   const t = $('#glowToggle'); t.textContent = L.glow.on ? '켬' : '끔'; t.classList.toggle('primary', L.glow.on);
@@ -1658,9 +1739,8 @@ $('#bgSel').onchange = e => { S.bg = e.target.value; $('#bgColorIn').style.displ
 $('#bgColorIn').oninput = e => { S.bgColor = e.target.value; render(); };
 $('#bgColorIn').onchange = () => { allThumbs(); scheduleSave(); };
 $('#newBtn').onclick = async () => {
-  if(!await askConfirm('새 작품', '새 작품을 만들면 지금 작업이 지워져요. 계속할까요?', '새로 만들기', true)) return;
   const [w,h] = $('#newSize').value.split('x').map(Number);
-  freshProject(w,h); $('#setVeil').classList.remove('open'); toast('새 작품을 만들었어요');
+  $('#setVeil').classList.remove('open'); await createProject(w, h);
 };
 $$('.veil').forEach(v => v.addEventListener('pointerdown', e => { if(e.target===v) v.classList.remove('open'); }));
 
@@ -1672,11 +1752,17 @@ function freshProject(w,h){
 }
 
 /* ---------- persistence (IndexedDB, this browser only) ---------- */
-let dbp = null;
-function idb(){ if(!dbp) dbp = new Promise((res,rej) => { const r = indexedDB.open('flipbook-anim',1);
-  r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); return dbp; }
-function op(mode, fn){ return idb().then(db => new Promise((res,rej) => { const tx = db.transaction('kv',mode); const req = fn(tx.objectStore('kv'));
+// every project lives in its own IndexedDB database; a small registry database lists them
+let dbp = null, curDBName = 'flipbook-anim', curProj = null, REG = null, regP = null;
+function openDB(name){ return new Promise((res,rej) => { const r = indexedDB.open(name,1);
+  r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+function idb(){ if(!dbp) dbp = openDB(curDBName); return dbp; }
+function opOn(dbPromise, mode, fn){ return dbPromise.then(db => new Promise((res,rej) => { const tx = db.transaction('kv',mode); const req = fn(tx.objectStore('kv'));
   tx.oncomplete = () => res(req ? req.result : undefined); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error); })); }
+const op = (mode, fn) => opOn(idb(), mode, fn);
+const regDB = () => regP || (regP = openDB('flipbook-registry'));
+const regGet = () => opOn(regDB(), 'readonly', s => s.get('projects'));
+const regPut = v => opOn(regDB(), 'readwrite', s => s.put(v, 'projects'));
 const kvGet = k => op('readonly', s => s.get(k));
 const kvPut = (k,v) => op('readwrite', s => s.put(v,k));
 const kvDel = k => op('readwrite', s => s.delete(k));
@@ -1715,6 +1801,7 @@ async function save(){
     const ks = await kvKeys();
     for(const k of ks) if(!want.has(k) && !String(k).startsWith('ref') && !String(k).startsWith('tl')) await kvDel(k);
     setSaveState('저장됨');
+    regTouch();
   }catch(err){ console.warn(err); setSaveState('이 브라우저에선 저장이 안 돼요'); }
   saving = false;
   if(again){ again = false; scheduleSave(); }
@@ -1723,7 +1810,7 @@ async function load(){
   try{
     const m = await kvGet('meta'); if(!m || !m.frames || !m.frames.length) return false;
     W = m.W; H = m.H; sizeCanvases();
-    layers = m.layers.map(l => ({ kind:'raster', glow:{ on:false, size:18, strength:0.9 }, ...l })); curLayer = layers.some(l=>l.id===m.curLayer) ? m.curLayer : layers[0].id;
+    layers = m.layers.map(l => ({ kind:'raster', glow:{ on:false, size:18, strength:0.9 }, tint:null, tintMode:'replace', ...l })); curLayer = layers.some(l=>l.id===m.curLayer) ? m.curLayer : layers[0].id;
     frames = [];
     for(const fm of m.frames){
       const f = { id:fm.id, cv:{} };
@@ -1744,6 +1831,112 @@ async function load(){
     return true;
   }catch(err){ console.warn(err); return false; }
 }
+
+/* ---------- projects ---------- */
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='hidden' && loaded){ clearTimeout(saveTimer); save(); } });
+async function regInit(){
+  try{ REG = await regGet(); }catch(e){ REG = null; }
+  if(!REG || !REG.list || !REG.list.length){
+    // the original single project becomes the first entry, so nothing already drawn is lost
+    REG = { cur:'p0', list:[{ id:'p0', name:'내 작품', db:'flipbook-anim', w:1280, h:720, updated:Date.now(), thumb:'' }] };
+    try{ await regPut(REG); }catch(e){}
+  }
+  curProj = REG.list.find(p => p.id===REG.cur) || REG.list[0]; curDBName = curProj.db;
+}
+function snapThumb(){ const t = frames[0] && frames[0]._t; if(t && curProj){ try{ curProj.thumb = t.toDataURL('image/webp', 0.7); }catch(e){} } }
+let regT = null;
+function regTouch(){
+  clearTimeout(regT);
+  regT = setTimeout(async () => {
+    if(!REG || !curProj) return;
+    curProj.updated = Date.now(); curProj.w = W; curProj.h = H; curProj.frames = frames.length; snapThumb();
+    try{ await regPut(REG); }catch(e){}
+  }, 400);
+}
+async function flushSave(){
+  clearTimeout(saveTimer);
+  while(saving) await new Promise(r => setTimeout(r, 50));
+  if(loaded) await save();
+  clearTimeout(regT);
+  if(REG && curProj){ curProj.updated = Date.now(); curProj.w = W; curProj.h = H; curProj.frames = frames.length; snapThumb(); try{ await regPut(REG); }catch(e){} }
+}
+async function closeCurDB(){ if(dbp){ try{ (await dbp).close(); }catch(e){} dbp = null; } }
+async function enterProject(){
+  loaded = false;
+  if(S.playing) stopPlay();
+  drawing = null; undoStack = []; redoStack = []; screenCache.clear();
+  Object.assign(REF, { frames:[], fw:0, fh:0, x:0, y:0, s:1, op:0.5, vis:true, front:false, offset:0, hold:1, name:'' });
+  if(refEdit) setRefEdit(false);
+  Object.assign(TL, { on:false, n:0, w:0, h:0 });
+  frames.forEach(f => f._t = null);
+  const ok = await load();
+  await loadRef(); await tlLoad();
+  if(!ok){ W = curProj.w || 1280; H = curProj.h || 720; sizeCanvases(); const L = newLayer('레이어 1'); layers=[L]; curLayer=L.id; frames=[newFrame(), newFrame()]; S.cur=0; }
+  loaded = true;
+  $('#projName').textContent = curProj.name;
+  $('#colorBtn').style.background = S.color; $('#colorIn').value = S.color;
+  $('#onionBtn').classList.toggle('on', S.onion);
+  setTool(S.brushMode || 'pen');
+  $('#onionBtn').classList.toggle('front', !!S.onionFront);
+  syncSettings(); syncLayerBtn(); syncUndo(); drawSize(); drawOp(); buildStrip(); fit(); render(); syncRec();
+  setSaveState(ok ? '저장됨' : '자동 저장 켜짐');
+  if(!ok) scheduleSave(true);
+  return ok;
+}
+async function switchProject(id){
+  if(!REG || (curProj && curProj.id===id)) return;
+  const target = REG.list.find(p => p.id===id); if(!target) return;
+  toast('프로젝트 여는 중…');
+  await flushSave(); await closeCurDB();
+  curProj = target; curDBName = target.db; REG.cur = id; try{ await regPut(REG); }catch(e){}
+  await enterProject(); toast(`"${target.name}" 열었어요`);
+}
+async function createProject(w, h, name){
+  const id = 'p' + Date.now().toString(36);
+  const entry = { id, name: name || ('작품 ' + (REG.list.length + 1)), db: 'flipbook-anim-' + id, w, h, updated: Date.now(), thumb:'' };
+  REG.list.unshift(entry); try{ await regPut(REG); }catch(e){}
+  await switchProject(id);
+}
+function deleteDB(name){ return new Promise(res => { const r = indexedDB.deleteDatabase(name); r.onsuccess = r.onerror = r.onblocked = () => res(); }); }
+async function deleteProject(id){
+  const p = REG.list.find(x => x.id===id); if(!p) return;
+  if(!await askConfirm('프로젝트 삭제', `"${p.name}"을(를) 삭제할까요? 그림, 레퍼런스, 타임랩스가 모두 지워지고 되돌릴 수 없어요.`, '삭제', true)) return;
+  if(curProj && curProj.id===id){
+    const other = REG.list.filter(x => x.id!==id).sort((a,b) => (b.updated||0)-(a.updated||0))[0];
+    if(other) await switchProject(other.id); else await createProject(p.w || 1280, p.h || 720);
+  }
+  REG.list = REG.list.filter(x => x.id!==id); try{ await regPut(REG); }catch(e){}
+  await deleteDB(p.db); toast('삭제했어요');
+}
+function fmtDate(t){ if(!t) return ''; const d = new Date(t); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function renderProjList(){
+  const box = $('#projList'); box.innerHTML = '';
+  const list = [...REG.list].sort((a,b) => (b.updated||0)-(a.updated||0));
+  for(const p of list){
+    const isCur = curProj && p.id===curProj.id;
+    const row = document.createElement('div'); row.className = 'prow' + (isCur ? ' on' : '');
+    const im = p.thumb ? Object.assign(document.createElement('img'), { src:p.thumb, alt:'' }) : Object.assign(document.createElement('div'), { className:'noimg' });
+    const meta = document.createElement('div'); meta.className = 'pm';
+    const b = document.createElement('b'); b.textContent = p.name;
+    const sm = document.createElement('small'); sm.textContent = `${p.w||'?'}×${p.h||'?'}` + (p.frames ? ` · ${p.frames}프레임` : '') + ` · ${fmtDate(p.updated)}` + (isCur ? ' · 열려 있음' : '');
+    meta.append(b, sm);
+    const ren = document.createElement('button'); ren.className = 'ib'; ren.setAttribute('aria-label','이름 바꾸기');
+    ren.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+    ren.onclick = async e => { e.stopPropagation(); $('#projVeil').classList.remove('open');
+      const nn = await askText('프로젝트 이름', p.name);
+      if(nn){ p.name = nn.slice(0,24); try{ await regPut(REG); }catch(_){} if(isCur) $('#projName').textContent = p.name; }
+      renderProjList(); $('#projVeil').classList.add('open'); };
+    const del = document.createElement('button'); del.className = 'ib'; del.setAttribute('aria-label','삭제');
+    del.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+    del.onclick = async e => { e.stopPropagation(); $('#projVeil').classList.remove('open'); await deleteProject(p.id); renderProjList(); $('#projVeil').classList.add('open'); };
+    row.append(im, meta, ren, del);
+    row.onclick = async () => { $('#projVeil').classList.remove('open'); await switchProject(p.id); };
+    box.appendChild(row);
+  }
+}
+$('#projBtn').onclick = async () => { if(S.playing) stopPlay(); closePops(); await flushSave(); renderProjList(); $('#projVeil').classList.add('open'); };
+$('#projClose').onclick = () => $('#projVeil').classList.remove('open');
+$('#projNew').onclick = async () => { const [w,h] = $('#projNewSize').value.split('x').map(Number); $('#projVeil').classList.remove('open'); await createProject(w, h); };
 
 /* ---------- export ---------- */
 function getDownloads(){
@@ -1772,20 +1965,22 @@ async function saveFile(name, blob){
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000);
   toast('저장했어요');
 }
-function compFrameAt(ctx, f, scale, w, h){
-  for(const L of layers){
-    if(!L.visible) continue;
-    if(L.kind==='vector'){
-      const t = scratch(w, h, 'exp'), tx = t.getContext('2d');
-      tx.setTransform(1,0,0,1,0,0); tx.clearRect(0,0,w,h); tx.setTransform(scale,0,0,scale,0,0);
-      for(const it of (f.vec && f.vec[L.id]) || []) drawVecItem(tx, it);
-      ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = L.opacity; ctx.drawImage(t,0,0); ctx.restore();
-      if(f.cv[L.id]){ ctx.save(); ctx.setTransform(scale,0,0,scale,0,0); drawGlow(ctx, f.cv[L.id], L); ctx.restore(); }
-    } else {
-      const c = f.cv[L.id]; if(!c) continue;
-      ctx.save(); ctx.setTransform(scale,0,0,scale,0,0); ctx.globalAlpha = L.opacity; ctx.drawImage(c,0,0); drawGlow(ctx, c, L); ctx.restore();
-    }
+function compLayerAt(ctx, f, L, scale, w, h){
+  if(L.kind==='vector'){
+    const t = scratch(w, h, 'exp'), tx = t.getContext('2d');
+    tx.setTransform(1,0,0,1,0,0); tx.globalCompositeOperation = 'source-over'; tx.clearRect(0,0,w,h); tx.setTransform(scale,0,0,scale,0,0);
+    for(const it of (f.vec && f.vec[L.id]) || []) drawVecItem(tx, it);
+    if(L.tint) applyTint(t, L);
+    ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha = L.opacity; ctx.drawImage(t,0,0); ctx.restore();
+    if(f.cv[L.id]){ ctx.save(); ctx.setTransform(scale,0,0,scale,0,0); drawGlow(ctx, layerSrc(f.cv[L.id], L), L); ctx.restore(); }
+  } else {
+    const c = f.cv[L.id]; if(!c) return;
+    const src = layerSrc(c, L);
+    ctx.save(); ctx.setTransform(scale,0,0,scale,0,0); ctx.globalAlpha = L.opacity; ctx.drawImage(src,0,0); drawGlow(ctx, src, L); ctx.restore();
   }
+}
+function compFrameAt(ctx, f, scale, w, h){
+  for(const L of layers){ if(L.visible) compLayerAt(ctx, f, L, scale, w, h); }
 }
 function frameImage(f, scale, trans){
   const c = mk(Math.round(W*scale), Math.round(H*scale)), x = c.getContext('2d');
@@ -1800,13 +1995,35 @@ async function exportSheet(scale, trans){
   if(fw*cols > 16384 || fh*rows > 16384 || fw*cols*fh*rows > 200e6){ toast('시트가 너무 커요. 크기를 50%로 줄여 보세요'); return; }
   const c = mk(fw*cols, fh*rows), x = c.getContext('2d');
   frames.forEach((f,i) => x.drawImage(frameImage(f,scale,trans), (i%cols)*fw, Math.floor(i/cols)*fh));
-  await saveFile(`flipbook_sheet_${cols}x${rows}_${stamp()}.png`, await toBlob(c));
+  await saveFile(`${projSlug()}_sheet_${cols}x${rows}_${stamp()}.png`, await toBlob(c));
+}
+const safeName = n => String(n||'').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,'_').slice(0,40) || 'flipbook';
+const projSlug = () => safeName(curProj ? curProj.name : 'flipbook');
+function layerImage(f, L, scale, trans){
+  const c = mk(Math.round(W*scale), Math.round(H*scale)), x = c.getContext('2d');
+  if(!trans){ x.fillStyle = bgFill() || '#ffffff'; x.fillRect(0,0,c.width,c.height); }
+  compLayerAt(x, f, L, scale, c.width, c.height); return c;
 }
 async function exportSeq(scale, trans){
   if(!window.JSZip){ toast('ZIP 도구를 불러오지 못했어요'); return; }
-  const zip = new JSZip(), pad = String(frames.length).length < 3 ? 3 : String(frames.length).length;
-  for(let i=0;i<frames.length;i++) zip.file(`frame_${String(i+1).padStart(pad,'0')}.png`, await toBlob(frameImage(frames[i],scale,trans)));
-  await saveFile(`flipbook_seq_${stamp()}.zip`, await zip.generateAsync({ type:'blob' }));
+  const mode = $('#expSeqMode').value;
+  const zip = new JSZip(), pad = Math.max(3, String(frames.length).length), num = i => String(i+1).padStart(pad,'0');
+  const slug = projSlug();
+  if(mode !== 'merged'){
+    const vis = layers.filter(l => l.visible);
+    if(!vis.length){ toast('보이는 레이어가 없어요'); return; }
+    // bottom layer first, numbered so folders sort in stacking order
+    for(let li=0; li<vis.length; li++){
+      const L = vis[li], dir = zip.folder(`${String(li+1).padStart(2,'0')}_${safeName(L.name)}`);
+      for(let i=0;i<frames.length;i++) dir.file(`${safeName(L.name)}_${num(i)}.png`, await toBlob(layerImage(frames[i], L, scale, trans)));
+      toast(`레이어 ${li+1}/${vis.length} 내보내는 중…`);
+    }
+  }
+  if(mode !== 'layers'){
+    const dir = mode==='merged' ? zip : zip.folder('00_합친그림');
+    for(let i=0;i<frames.length;i++) dir.file(`frame_${num(i)}.png`, await toBlob(frameImage(frames[i],scale,trans)));
+  }
+  await saveFile(`${slug}_seq_${stamp()}.zip`, await zip.generateAsync({ type:'blob' }));
 }
 async function exportVideo(scale){
   if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream){ toast('이 환경은 동영상 저장을 지원하지 않아요'); return; }
@@ -1823,7 +2040,7 @@ async function exportVideo(scale){
   drawF(frames[0]); rec.start();
   for(let l=0;l<loops;l++) for(const f of frames){ drawF(f); await sleep(1000/S.fps); }
   rec.stop(); await done;
-  await saveFile(`flipbook_${stamp()}.${t[1]}`, new Blob(chunks, { type:t[0].split(';')[0] }));
+  await saveFile(`${projSlug()}_${stamp()}.${t[1]}`, new Blob(chunks, { type:t[0].split(';')[0] }));
 }
 $('#exportBtn').onclick = () => { if(S.playing) stopPlay(); $('#expVeil').classList.add('open'); };
 $('#expClose').onclick = () => $('#expVeil').classList.remove('open');
@@ -2207,7 +2424,7 @@ $('#recExport').onclick = async () => {
     if(last !== TL.n-1) await show(TL.n-1);
     for(let f=0; f<Math.max(1, hold*FPS); f++){ paint(); track.requestFrame && track.requestFrame(); await sleep(1000/FPS); }
     rec.stop(); await done;
-    await saveFile(`flipbook_timelapse_${stamp()}.${t[1]}`, new Blob(chunks, { type:t[0].split(';')[0] }));
+    await saveFile(`${projSlug()}_timelapse_${stamp()}.${t[1]}`, new Blob(chunks, { type:t[0].split(';')[0] }));
   }catch(err){ console.warn(err); toast('타임랩스 저장에 실패했어요'); }
   exporting = false;
 };
@@ -2418,6 +2635,9 @@ function askText(title, value){
   return dialog(title, inp, [{ label:'취소', value:null }, { label:'확인', value:'ok', primary:true }]).then(v => v==='ok' ? inp.value.trim() : null);
 }
 
+const APP_VER = '2026.10.07b · 올가미 미리보기 수정 (앱)';
+$('#verLine').textContent = '버전 ' + APP_VER;
+
 /* ---------- toast ---------- */
 let toastT = null;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
@@ -2425,17 +2645,8 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add
 /* ---------- boot ---------- */
 (async function boot(){
   sizeCanvases();
-  const ok = await load();
-  await loadRef();
-  await tlLoad();
-  if(!ok){ const L = newLayer('레이어 1'); layers=[L]; curLayer=L.id; frames=[newFrame(), newFrame()]; S.cur=0; }
-  loaded = true;
-  $('#colorBtn').style.background = S.color; $('#colorIn').value = S.color;
-  $('#onionBtn').classList.toggle('on', S.onion);
-  setTool(S.brushMode || 'pen');
-  $('#onionBtn').classList.toggle('front', !!S.onionFront);
-  syncSettings(); syncLayerBtn(); syncUndo(); drawSize(); drawOp(); buildStrip(); fit(); render();
-  setSaveState(ok ? '저장됨' : '자동 저장 켜짐');
+  await regInit();
+  const ok = await enterProject();
   if(!ok) setTimeout(() => toast('두 손가락 탭: 실행 취소 · 세 손가락 탭: 지우개 전환'), 400);
   new ResizeObserver(() => { drawSize(); drawOp(); }).observe($('#rail'));
 })();
