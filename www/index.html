@@ -431,6 +431,7 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
     <button class="big" data-exp="seq"><b>PNG 시퀀스 ZIP</b><small>프레임마다 한 장씩 · 아래에서 레이어별로 나눌지 골라요</small></button>
     <div class="opt"><div class="lbl">PNG 시퀀스 구성<small>레이어별: 보이는 레이어마다 폴더 하나씩</small></div>
       <select class="tb" id="expSeqMode"><option value="layers">레이어별</option><option value="both">레이어별 + 합친 그림</option><option value="merged">합친 그림만</option></select></div>
+    <button class="big" data-exp="kra"><b>Krita 파일 (.kra)</b><small>레이어마다 Krita 레이어 하나 · 모든 프레임이 키프레임으로 들어가요</small></button>
     <button class="big" data-exp="video"><b>동영상</b><small>MP4 또는 WebM, 배경색이 포함돼요</small></button>
     <div class="acts"><button class="tb" id="expClose">닫기</button></div>
   </div>
@@ -2025,6 +2026,111 @@ async function exportSeq(scale, trans){
   }
   await saveFile(`${slug}_seq_${stamp()}.zip`, await zip.generateAsync({ type:'blob' }));
 }
+/* ---------- Krita (.kra) export: one paint layer per app layer, every frame as a keyframe ---------- */
+const xmlEsc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const kraUuid = () => '{' + (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random()*16|0).toString(16))) + '}';
+// Krita tiled paint-device data (VERSION 2): 64x64 BGRA8 tiles, stored raw (flag byte 0), empty tiles skipped
+function kraTiles(imgData, w, h){
+  const d = imgData.data, T = 64, parts = []; let n = 0;
+  for(let ty=0; ty<h; ty+=T) for(let tx=0; tx<w; tx+=T){
+    let any = false;
+    for(let y=ty; y<Math.min(h,ty+T) && !any; y++){ const o = (y*w)*4; for(let x=tx; x<Math.min(w,tx+T); x++) if(d[o+x*4+3]){ any = true; break; } }
+    if(!any) continue;
+    const buf = new Uint8Array(1 + T*T*4); // buf[0] = 0 → RAW_DATA_FLAG
+    for(let y=0; y<T; y++){ const sy = ty+y; if(sy>=h) break;
+      for(let x=0; x<T; x++){ const sx = tx+x; if(sx>=w) break;
+        const s = (sy*w+sx)*4, q = 1 + (y*T+x)*4;
+        buf[q] = d[s+2]; buf[q+1] = d[s+1]; buf[q+2] = d[s]; buf[q+3] = d[s+3]; } }
+    parts.push(new TextEncoder().encode(`${tx},${ty},LZF,${buf.length}\n`), buf); n++;
+  }
+  const head = new TextEncoder().encode(`VERSION 2\nTILEWIDTH 64\nTILEHEIGHT 64\nPIXELSIZE 4\nDATA ${n}\n`);
+  let len = head.length; for(const p of parts) len += p.length;
+  const out = new Uint8Array(len); out.set(head, 0); let o = head.length; for(const p of parts){ out.set(p, o); o += p.length; }
+  return out;
+}
+async function exportKra(){
+  if(!window.JSZip){ toast('ZIP 도구를 불러오지 못했어요'); return; }
+  const zip = new JSZip(), IMG = 'flipbook', base = IMG + '/layers/';
+  zip.file('mimetype', 'application/x-krita', { compression:'STORE' });
+  const c = mk(W, H), x = c.getContext('2d', { willReadFrequently:true });
+  const empty = new Uint8Array([0,0,0,0]);
+  const entries = [];   // bottom → top
+  let num = 2;
+  const bg = bgFill();
+  if(bg){   // background colour as its own plain layer at the bottom
+    const fn = 'layer' + (num++);
+    x.setTransform(1,0,0,1,0,0); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.clearRect(0,0,W,H); x.fillStyle = bg; x.fillRect(0,0,W,H);
+    zip.file(base + fn, kraTiles(x.getImageData(0,0,W,H), W, H)); zip.file(base + fn + '.defaultpixel', empty);
+    entries.push(`<layer name="배경" filename="${fn}" nodetype="paintlayer" visible="1" opacity="255" compositeop="normal" locked="1" x="0" y="0" uuid="${kraUuid()}" collapsed="0" colorlabel="0" intimeline="0" onionskin="0" channelflags="" channellockflags="" colorspacename="RGBA"/>`);
+  }
+  for(let li=0; li<layers.length; li++){
+    const L = layers[li], fn = 'layer' + (num++);
+    const Lb = { ...L, opacity:1 };   // opacity stays a Krita layer setting; colour + glow are baked into the pixels
+    const keys = [];
+    for(let i=0; i<frames.length; i++){
+      x.setTransform(1,0,0,1,0,0); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.clearRect(0,0,W,H);
+      compLayerAt(x, frames[i], Lb, 1, W, H);
+      const file = i===0 ? fn : `${fn}.f${i}`;
+      zip.file(base + file, kraTiles(x.getImageData(0,0,W,H), W, H));
+      zip.file(base + file + '.defaultpixel', empty);
+      keys.push(`  <keyframe time="${i}" color-label="0" frame="${file}">\n   <offset type="point" x="0" y="0"/>\n  </keyframe>`);
+    }
+    zip.file(base + fn + '.keyframes.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE keyframes PUBLIC '-//KDE//DTD krita-keyframes 1.0//EN' 'http://www.calligra.org/DTD/krita-keyframes-1.0.dtd'>
+<keyframes xmlns="http://www.calligra.org/DTD/krita-keyframes" version="1.0">
+ <channel name="content">
+${keys.join('\n')}
+ </channel>
+</keyframes>
+`);
+    entries.push(`<layer name="${xmlEsc(L.name)}" filename="${fn}" nodetype="paintlayer" visible="${L.visible?1:0}" opacity="${Math.round(L.opacity*255)}" compositeop="normal" locked="0" x="0" y="0" uuid="${kraUuid()}" collapsed="0" colorlabel="0" intimeline="1" onionskin="1" keyframes="${fn}.keyframes.xml" channelflags="" channellockflags="" colorspacename="RGBA"${L.id===curLayer?' selected="true"':''}/>`);
+    toast(`Krita 레이어 ${li+1}/${layers.length} 만드는 중…`);
+    await new Promise(r => setTimeout(r, 0));
+  }
+  const anim = `<framerate type="value" value="${S.fps}"/>\n  <range type="timerange" from="0" to="${frames.length-1}"/>\n  <currentTime type="value" value="0"/>`;
+  zip.file('maindoc.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE DOC PUBLIC '-//KDE//DTD krita 2.0//EN' 'http://www.calligra.org/DTD/krita-2.0.dtd'>
+<DOC xmlns="http://www.calligra.org/DTD/krita" kritaVersion="5.2.2" syntaxVersion="2.0" editor="Krita">
+ <IMAGE name="${IMG}" mime="application/x-kra" width="${W}" height="${H}" colorspacename="RGBA" profile="sRGB-elle-V2-srgbtrc.icc" x-res="300" y-res="300" description="">
+  <layers>
+   ${entries.reverse().join('\n   ')}
+  </layers>
+  <ProjectionBackgroundColor ColorData="AAAAAA=="/>
+  <GlobalAssistantsColor SimpleColorData="176,176,176,255"/>
+  <Palettes/>
+  <resources/>
+  <animation>
+  ${anim}
+  </animation>
+ </IMAGE>
+</DOC>
+`);
+  zip.file(IMG + '/animation/index.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE animation-metadata PUBLIC '-//KDE//DTD krita-animation-metadata 1.1//EN' 'http://www.calligra.org/DTD/krita-animation-metadata-1.1.dtd'>
+<animation-metadata xmlns="http://www.calligra.org/DTD/animation-metadata" version="1.1">
+ ${anim}
+ <export-settings>
+  <sequenceFilePath type="value" value=""/>
+  <sequenceBaseName type="value" value=""/>
+  <sequenceInitialFrameNumber type="value" value="-1"/>
+ </export-settings>
+</animation-metadata>
+`);
+  zip.file('documentinfo.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE document-info PUBLIC '-//KDE//DTD document-info 1.1//EN' 'http://www.calligra.org/DTD/document-info-1.1.dtd'>
+<document-info xmlns="http://www.calligra.org/DTD/document-info">
+ <about><title>${IMG}</title><description></description><subject></subject><abstract></abstract><keyword></keyword><initial-creator>Flipbook</initial-creator><editing-cycles>1</editing-cycles><editing-time></editing-time><date></date><creation-date></creation-date><language></language><license></license></about>
+ <author><full-name></full-name></author>
+</document-info>
+`);
+  // merged first frame + small preview (used by Krita and file browsers as thumbnails)
+  zip.file('mergedimage.png', await toBlob(frameImage(frames[0], 1, !bg)), { compression:'STORE' });
+  const pk = Math.min(1, 256/Math.max(W,H));
+  zip.file('preview.png', await toBlob(frameImage(frames[0], pk, !bg)), { compression:'STORE' });
+  toast('Krita 파일 압축하는 중…');
+  const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 }, mimeType:'application/x-krita' });
+  await saveFile(`${projSlug()}_${stamp()}.kra`, blob);
+}
 async function exportVideo(scale){
   if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream){ toast('이 환경은 동영상 저장을 지원하지 않아요'); return; }
   const types = [['video/mp4;codecs=avc1','mp4'],['video/mp4','mp4'],['video/webm;codecs=vp9','webm'],['video/webm','webm']];
@@ -2048,7 +2154,7 @@ let exporting = false;
 $$('[data-exp]').forEach(b => b.onclick = async () => {
   if(exporting) return; exporting = true; const kind = b.dataset.exp; toast('만드는 중…');
   const scale = +$('#expScale').value, trans = $('#expBg').value==='trans';
-  try{ if(kind==='sheet') await exportSheet(scale, trans); else if(kind==='seq') await exportSeq(scale, trans); else await exportVideo(scale); }
+  try{ if(kind==='sheet') await exportSheet(scale, trans); else if(kind==='seq') await exportSeq(scale, trans); else if(kind==='kra') await exportKra(); else await exportVideo(scale); }
   catch(err){ console.warn(err); toast('내보내기에 실패했어요'); }
   exporting = false;
 });
@@ -2635,7 +2741,7 @@ function askText(title, value){
   return dialog(title, inp, [{ label:'취소', value:null }, { label:'확인', value:'ok', primary:true }]).then(v => v==='ok' ? inp.value.trim() : null);
 }
 
-const APP_VER = '2026.10.07b · 올가미 미리보기 수정 (앱)';
+const APP_VER = '2026.10.09 · Krita 내보내기 (앱)';
 $('#verLine').textContent = '버전 ' + APP_VER;
 
 /* ---------- toast ---------- */
