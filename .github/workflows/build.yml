@@ -43,12 +43,16 @@ jobs:
         run: cp android/app/build/outputs/apk/debug/app-debug.apk Flipbook.apk
       - uses: actions/upload-artifact@v4
         with: { name: Flipbook-android, path: Flipbook.apk }
-      - name: Attach to release (tags only)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish to a release (one per build, so the APK can be grabbed from a phone)
         uses: softprops/action-gh-release@v2
-        with: { files: Flipbook.apk }
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('빌드 #{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          files: Flipbook.apk
 
   windows:
+    needs: android
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +66,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with: { name: Flipbook-windows, path: dist/*.exe }
-      - name: Attach to release (tags only)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Add the EXE to the same release
         uses: softprops/action-gh-release@v2
-        with: { files: dist/*.exe }
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('빌드 #{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          files: dist/*.exe
