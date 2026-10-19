@@ -13,8 +13,9 @@ UI 문구는 전부 한국어로 쓴다.
 - `.github/workflows/build.yml` — main에 push하면 APK·EXE 자동 빌드.
 
 ## 빌드·배포
-- main에 push → Actions가 `android`(ubuntu)와 `windows` 두 작업을 돌린다. 결과는 각 실행의 Artifacts(`Flipbook-android`, `Flipbook-windows`).
-- `v*` 태그를 만들면 결과물이 GitHub Release에 자동으로 붙는다(폰에서 APK 받을 때 이 방법을 쓴다).
+- main에 push → Actions가 `android`(ubuntu) 다음 `windows` 작업을 돌린다. 빌드마다 `build-<번호>` 릴리스가 자동으로 생기고 `Flipbook.apk`와 EXE가 붙는다(폰에서는 Releases 페이지에서 바로 받는다). Artifacts에도 같은 파일이 있다.
+- Claude 원격 세션에서는 git push와 `gh api`(읽기, 릴리스 자산 다운로드, `gh run cancel`)는 되지만 태그 push·API 쓰기·Artifacts zip 다운로드는 프록시가 막는다. 그래서 APK는 `build-<번호>` 릴리스 자산으로 받는다.
+- `.gitignore`의 `/android/`·`/dist/`는 루트만 막는다(`icons/android/`는 커밋돼야 함).
 - 안드로이드 서명: Secret `ANDROID_DEBUG_KEYSTORE`(디버그 키스토어 base64)를 `~/.android/debug.keystore`로 풀어서 매번 같은 키로 서명한다. 이게 빠지면 매 빌드 키가 달라져서 기존 앱 위에 설치가 안 된다("앱이 설치되지 않음").
 - ubuntu 러너에는 Android SDK가 이미 깔려 있다. `android-actions/setup-android`는 쓰지 않는다(옛 `tools` 패키지를 받다가 실패했음).
 - 윈도우: portable exe + NSIS 설치판. 코드 서명 없음.
