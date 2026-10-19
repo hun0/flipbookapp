@@ -1,4 +1,4 @@
 node_modules/
-dist/
-android/
+/dist/
+/android/
 www/jszip.min.js

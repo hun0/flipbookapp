@@ -26,10 +26,29 @@
   "build": {
     "appId": "com.hun0fx.flipbook",
     "productName": "Flipbook",
-    "directories": { "output": "dist" },
-    "files": ["electron/**", "www/**", "package.json"],
-    "win": { "target": ["portable", "nsis"] },
-    "portable": { "artifactName": "Flipbook-${version}-portable.exe" },
-    "nsis": { "artifactName": "Flipbook-${version}-setup.exe", "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**",
+      "www/**",
+      "icons/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "icons/icon.ico"
+    },
+    "portable": {
+      "artifactName": "Flipbook-${version}-portable.exe"
+    },
+    "nsis": {
+      "artifactName": "Flipbook-${version}-setup.exe",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

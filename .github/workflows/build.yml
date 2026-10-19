@@ -20,6 +20,11 @@ jobs:
         with: { node-version: 20 }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
+      - name: Use fixed signing key (so updates install over the old app)
+        env:
+          KEY: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+        run: |
+          if [ -n "$KEY" ]; then mkdir -p ~/.android && echo "$KEY" | base64 -d > ~/.android/debug.keystore && echo "fixed key installed"; else echo "no key secret - random key"; fi
       - name: Install
         run: npm install
       - name: Add Android platform
@@ -27,6 +32,8 @@ jobs:
           npm run prep
           npx cap add android
           npx cap sync android
+      - name: App icon
+        run: cp -r icons/android/res/. android/app/src/main/res/
       - name: Build debug APK
         working-directory: android
         run: |

@@ -5,6 +5,7 @@ function createWindow () {
   const win = new BrowserWindow({
     width: 1440, height: 900, minWidth: 800, minHeight: 600,
     backgroundColor: '#1C1F27', autoHideMenuBar: true, title: 'Flipbook',
+    icon: path.join(__dirname, '..', 'icons', 'icon.png'),
     webPreferences: { contextIsolation: true, sandbox: true }
   });
   win.loadFile(path.join(__dirname, '..', 'www', 'index.html'));
