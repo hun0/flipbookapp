@@ -2,7 +2,7 @@
 
 프레임 단위 애니메이션 드로잉 앱. 안드로이드 폰·태블릿(갤럭시 + S펜)이 주 사용 환경이고, PC(윈도우)에서도 쓴다.
 사용자는 게임 VFX 아티스트라서 이펙트(검은 배경, 글로우, 스프라이트 시트, 투명 배경 내보내기) 작업 흐름이 중요하다.
-UI 문구는 전부 한국어로 쓴다.
+UI 문구는 코드에 한국어로 쓰고, 영어는 `EN` 사전(한국어 원문 → 영어)으로 붙인다. 기본 언어는 영어(itch.io 판매용), 설정 맨 위에서 한국어로 바꿀 수 있다(`localStorage` `flipbook-lang`, 바꾸면 저장 후 새로 고침).
 
 ## 저장소 구조
 - `www/index.html` — 앱 전체. HTML/CSS/JS가 한 파일에 다 들어 있다. **기능 수정은 거의 항상 이 파일만 고친다.**
@@ -19,6 +19,7 @@ UI 문구는 전부 한국어로 쓴다.
 - 안드로이드 서명: Secret `ANDROID_DEBUG_KEYSTORE`(디버그 키스토어 base64)를 `~/.android/debug.keystore`로 풀어서 매번 같은 키로 서명한다. 이게 빠지면 매 빌드 키가 달라져서 기존 앱 위에 설치가 안 된다("앱이 설치되지 않음").
 - ubuntu 러너에는 Android SDK가 이미 깔려 있다. `android-actions/setup-android`는 쓰지 않는다(옛 `tools` 패키지를 받다가 실패했음).
 - 윈도우: portable exe + NSIS 설치판. 코드 서명 없음.
+- itch.io: https://hun0fx.itch.io/flipbook (무료 + 후원). 정보 창의 `ITCH_URL`과 `LICENSE.txt`(NSIS 설치 화면에도 표시)에 같은 주소가 있다.
 - **수정할 때마다 `APP_VER` 문자열을 올린다.** 설정 창 아래에 표시돼서 새 빌드가 들어갔는지 사용자가 확인하는 용도다.
 
 ## 웹 버전과의 차이
@@ -36,6 +37,8 @@ UI 문구는 전부 한국어로 쓴다.
 - 자동 채우기: 래스터는 `autoFillRaster`(픽셀 플러드 + 선 아래 destination-over), 벡터는 `autoFillVector`(획 주변만 최대 4배 고해상도로 판독 → 외곽선 추적 `traceOutline` → 다듬기 → 벡터 shape). 끝이 거의 닫힌 획은 판정할 때만 가상 연결선을 긋는다.
 - 프로젝트: 프로젝트마다 IndexedDB 데이터베이스가 따로 있다(첫 프로젝트는 `flipbook-anim`, 이후 `flipbook-anim-<id>`). 목록은 `flipbook-registry` DB의 `projects` 키(`{cur, list:[{id,name,db,w,h,updated,frames,thumb}]}`). 전환은 `switchProject()` → `flushSave()` → DB 닫기 → `enterProject()`(상태 초기화 후 load). 레퍼런스·타임랩스도 프로젝트별로 저장된다.
 - 저장: 프로젝트 DB의 store `kv`. 키는 `meta`, `프레임id:레이어id`(래스터 PNG), `프레임id:레이어id:v`(벡터 JSON), `ref:*`·`refmeta`(레퍼런스), `tl:*`·`tlmeta`(타임랩스). 프로젝트 저장 정리 단계에서 `ref`·`tl`로 시작하는 키는 지우지 않는다. 설정 기본값을 바꿀 때는 `sv` 값으로 한 번만 이주(migration)한다.
+- 다국어: `LANG`, `tr(ko, en)`(변수가 들어간 문구), `tx(s)`(사전 조회), `EN` 사전 + `EN_PAT`(레이어 N 등). 영어 모드에서는 `MutationObserver`가 화면에 들어오는 한국어 텍스트·title·aria-label을 사전대로 바꾼다. **새 문구를 넣으면 고정 문구는 `EN`에 추가, 변수가 섞인 문구는 `tr()`로 감싼다.** 헤드리스로 영어 모드 화면을 훑어 한글이 남았는지 확인한다.
+- 백업: `.flipbook` 파일 = zip(`flipbook.json` 목록 + 프로젝트 DB의 모든 키를 파일 하나씩, 형식 `flipbook-backup` v1). `backupProjects(list, fileName)`, `importBackup(file)`은 새 프로젝트로 복원한다(이름이 겹치면 '(복원)').
 - 대화창: 브라우저 `confirm` / `prompt`는 쓰지 않는다(웹 뷰어에서 막힘). `dialog()`, `askConfirm()`, `askText()`를 쓴다.
 
 ## 지금 있는 기능
@@ -59,8 +62,8 @@ UI 문구는 전부 한국어로 쓴다.
 - 아이패드(사파리 엔진) 대응은 아직이다: `ctx.filter` 블러(글로우)와 `ImageDecoder`(GIF 프레임 분리)를 사파리가 지원하지 않는다.
 
 ## 다음 할 일 후보
-1. **작업 파일 백업·불러오기** (프로젝트 하나를 파일로 내보내고 다시 불러오기). 앱을 지우면 IndexedDB가 통째로 지워져서 모든 프로젝트가 사라지기 때문에 우선순위가 높다.
-2. 프로젝트 복제.
+1. 프로젝트 복제.
+2. (완료) 백업·불러오기, 영어 UI, 정보·라이선스 — itch.io 무료+후원 출시용(1.0.0).
 3. 스플래시 화면. (앱 아이콘은 `icons/`에 있음 — `icons/parts.py`가 SVG를 만들고, 빌드 때 `icons/android/res`를 안드로이드 res에 복사, 윈도우는 `icons/icon.ico`)
 4. 실기기(갤럭시)에서 S펜 버튼·팜 리젝션 동작 확인 후 조정.
 5. 아이패드용 iOS 빌드(Capacitor iOS, 글로우·GIF 대체 구현).

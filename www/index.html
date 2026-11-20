@@ -40,6 +40,7 @@ button,select,input{font:inherit;color:inherit}
 #projName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:480px){ #saveState{display:none} #projBtn{max-width:30vw} }
 #projList{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.about p{margin:0 0 10px;line-height:1.5}.about h4{margin:14px 0 6px;font-size:13px}.about ul{margin:0;padding-left:18px;line-height:1.5;font-size:13px}.about li{margin-bottom:4px}.about a{color:var(--accent)}.about .muted{font-size:12px;color:var(--muted)}
 .prow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);cursor:pointer}
 .prow.on{border-color:var(--accent)}
 .prow img,.prow .noimg{width:72px;height:44px;object-fit:contain;background:#000;border-radius:6px;flex:none}
@@ -371,6 +372,7 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
 <div class="veil" id="setVeil">
   <div class="sheet" role="dialog" aria-label="설정">
     <h2>설정</h2>
+    <div class="opt"><div class="lbl">Language · 언어</div><select class="tb" id="langSel"><option value="en">English</option><option value="ko">한국어</option></select></div>
     <div class="opt"><div class="lbl">손가락으로 그리기<small>펜이 감지되면 손가락은 이동·확대만 해요</small></div>
       <select class="tb" id="fingerSel"><option value="auto">자동</option><option value="on">켬</option><option value="off">끔</option></select></div>
     <div class="opt"><div class="lbl">팜 리젝션<small>손바닥이 닿아 화면이 움직이거나 실행 취소되는 걸 막아요</small></div>
@@ -406,6 +408,7 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
       <select class="tb" id="newSize"><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="1024x1024">1024 × 1024</option><option value="512x512">512 × 512</option><option value="720x1280">720 × 1280</option></select></div>
     <div class="opt"><div class="lbl">정사각 크롭 · 해상도 맞추기<small>모든 프레임·레이어의 그림이 다 들어가게 잘라서 256/512/1024로 바꿔요</small></div>
       <button class="tb" id="cropBtn">맞추기…</button></div>
+    <div class="opt"><div class="lbl">정보·라이선스<small>만든 사람, 이용 조건, 후원</small></div><button class="tb" id="aboutBtn">보기</button></div>
     <div class="acts"><button class="tb" id="newBtn">새로 만들기</button><button class="tb primary" id="setClose">닫기</button></div>
     <p id="verLine" style="font-weight:600;color:var(--ink)"></p>
     <p>세 손가락 탭: 브러시 ↔ 지우개 전환 · 두 손가락 탭: 실행 취소<br>단축키: B 펜 · M 마커 · L 올가미 채우기 · K 올가미 지우개 · J 획 지우개 · X 브러시/지우개 전환 · E 지우개 · G 채우기 · I 스포이드 · R 회전 · 0 화면 맞춤 · , . 프레임 이동 · Enter 재생 · D 복제</p>
@@ -419,6 +422,9 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
     <div class="opt"><div class="lbl">새 프로젝트<small>지금 작업은 그대로 저장돼요</small></div>
       <div style="display:flex;gap:6px"><select class="tb" id="projNewSize"><option value="1280x720">1280 × 720</option><option value="1920x1080">1920 × 1080</option><option value="1024x1024">1024 × 1024</option><option value="512x512">512 × 512</option><option value="720x1280">720 × 1280</option></select>
       <button class="tb primary" id="projNew">만들기</button></div></div>
+    <div class="opt"><div class="lbl">백업<small>앱을 지우면 작업도 지워져요. 백업 파일(.flipbook)로 저장해 두고 다른 기기에서도 불러올 수 있어요</small></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="tb" id="projBackupAll">모두 백업</button><button class="tb" id="projImport">백업 불러오기</button></div></div>
+    <input type="file" id="projFile" style="display:none">
     <div class="acts"><button class="tb" id="projClose">닫기</button></div>
   </div>
 </div>
@@ -449,6 +455,130 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
 'use strict';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+
+/* ---------- language (English default, Korean optional) ---------- */
+const LANG_KEY = 'flipbook-lang';
+let LANG = 'en';
+try{ LANG = localStorage.getItem(LANG_KEY) || 'en'; }catch(e){}
+if(LANG !== 'ko') LANG = 'en';
+document.documentElement.lang = LANG;
+const tr = (ko, en) => LANG === 'en' ? en : ko;
+const EN = {
+'플립북':'Flipbook','플립북 — 애니메이션 드로잉':'Flipbook — Frame-by-Frame Animation','불러오는 중':'Loading','내보내기':'Export','굵기':'Size','불투명':'Opacity',
+'레퍼런스 조정 중 · 끌어서 이동 · 두 손가락이나 모서리로 크기':'Adjusting reference · drag to move · pinch or drag a corner to resize',
+'완료':'Done','레이어':'Layer','레이어 1':'Layer 1','색상':'Color','최근 사용':'Recent','직접 고르기':'Custom',
+'타임랩스':'Timelapse','녹화 시작':'Start recording','영상으로 저장':'Save as video','지우기':'Clear','영상 길이':'Video length',
+'자동 (한 획 = 1/30초)':'Auto (1 stroke = 1/30 s)','15초':'15 s','30초':'30 s','60초':'60 s','마지막 장면 유지':'Hold last frame','없음':'None','2초':'2 s','4초':'4 s',
+'레퍼런스':'Reference','불러오기':'Import','위치·크기 조정':'Move / resize','캔버스에 맞추기':'Fit to canvas','보이기':'Show','켬':'On','불투명도':'Opacity','위치':'Position',
+'그림 뒤':'Behind drawing','그림 앞':'In front of drawing','시작 프레임':'Start frame','한 장당 길이':'Hold each image','1프레임':'1 frame','2프레임':'2 frames','3프레임':'3 frames','4프레임':'4 frames',
+'레퍼런스 지우기':'Remove reference','+ 래스터':'+ Raster','+ 벡터':'+ Vector','삭제':'Delete','레이어 색':'Layer color','원래 색':'Original','단색으로':'Solid color','색 곱하기':'Multiply',
+'단색: 그림 전체를 이 색으로 · 곱하기: 명암은 살리고 색만 입혀요. 원본은 그대로라 언제든 되돌릴 수 있어요.':'Solid: paints the whole layer this color · Multiply: keeps shading, adds color. The original pixels are untouched, so you can always switch back.',
+'글로우':'Glow','끔':'Off','크기':'Size','세기':'Strength','이 벡터 레이어를 래스터로 변환':'Convert this vector layer to raster',
+'벡터 레이어는 획 하나하나가 따로 저장돼서 획 지우개로 통째로 지울 수 있어요.':'Vector layers store every stroke separately, so the stroke eraser can remove whole strokes.',
+'설정':'Settings','손가락으로 그리기':'Draw with finger','펜이 감지되면 손가락은 이동·확대만 해요':'Once a pen is detected, fingers only pan and zoom','자동':'Auto',
+'팜 리젝션':'Palm rejection','손바닥이 닿아 화면이 움직이거나 실행 취소되는 걸 막아요':'Stops your palm from moving the canvas or triggering undo','보통':'Normal','강하게':'Strong',
+'S펜 버튼':'Pen button',"갤럭시는 '에어 커맨드'가 버튼을 먼저 가져갈 수 있어요":"On Galaxy devices, 'Air command' may take the button first",
+'누를 때마다 펜↔지우개':'Toggle pen ↔ eraser','누르는 동안 지우개':'Eraser while held','누른 채 위아래로 프레임 넘기기':'Hold and move up/down to flip frames',
+'두 손가락 회전':'Two-finger rotate','90° 단위 근처에서 딱 맞춰져요 · 오른쪽 아래 배율을 누르면 초기화':'Snaps near 90° steps · tap the zoom label (bottom right) to reset',
+'손떨림 보정 방식':'Stabilizer','끈 (당기기)':'String (pull)','따라가기 (지연)':'Lag (delay)','따라가기 강도':'Lag strength','끈 길이':'String length',
+'손 뗄 때 끝까지 잇기':'Finish line on release','끈 길이만큼 남은 구간을 마저 그려요':'Draws the remaining string length when you lift the pen',
+'어니언 스킨 범위':'Onion skin range','앞뒤로 보여줄 프레임 수':'Frames shown before and after','1장':'1','2장':'2','3장':'3',
+'어니언 스킨 위치':'Onion skin position','앞: 현재 그림 위에 겹쳐 보여요 (어니언 버튼 길게 눌러도 전환)':'Front: shown on top of the current drawing (long-press the onion button to switch)',
+'뒤':'Back','앞':'Front','어니언 스킨 진하기':'Onion skin strength','멀어질수록 흐려지는 정도':'Fade with distance','앞에 겹칠 때 섞는 방식':'Blend when in front',
+'일반: 어두운 면 위에서도 보여요 · 곱하기: 선을 덜 가려요':'Normal: visible over dark areas · Multiply: hides lines less','일반':'Normal','곱하기':'Multiply',
+'선 다듬기 (벡터·올가미)':'Line smoothing (vector & lasso)','그린 뒤 선을 한 번 더 매끈하게 · 손떨림 보정을 끄면 이것도 꺼져요':'Smooths the line once more after drawing · turns off when the stabilizer is off',
+'펜 끝 뾰족하게':'Tapered ends','벡터 펜 획의 시작·끝이 점점 가늘어져요':'Vector pen strokes get thinner at the start and end','양끝':'Both ends','시작만':'Start only','끝만':'End only',
+'뾰족해지는 길이':'Taper length','배경':'Background','투명은 이펙트 시트용':'Transparent is for FX sheets','검정':'Black','흰색':'White','직접 선택':'Custom','투명':'Transparent',
+'재생 속도':'Playback speed','새 프로젝트':'New project','지금 작업은 그대로 두고 새로 만들어요':'Keeps your current work and starts a new one',
+'정사각 크롭 · 해상도 맞추기':'Square crop · fit resolution','모든 프레임·레이어의 그림이 다 들어가게 잘라서 256/512/1024로 바꿔요':'Crops to a square that fits every frame and layer, then resizes to 256/512/1024',
+'맞추기…':'Fit…','새로 만들기':'Create new','닫기':'Close',
+'세 손가락 탭: 브러시 ↔ 지우개 전환 · 두 손가락 탭: 실행 취소':'Three-finger tap: brush ↔ eraser · Two-finger tap: undo',
+'단축키: B 펜 · M 마커 · L 올가미 채우기 · K 올가미 지우개 · J 획 지우개 · X 브러시/지우개 전환 · E 지우개 · G 채우기 · I 스포이드 · R 회전 · 0 화면 맞춤 · , . 프레임 이동 · Enter 재생 · D 복제':'Shortcuts: B pen · M marker · L lasso fill · K lasso eraser · J stroke eraser · X brush/eraser · E eraser · G fill · I eyedropper · R rotate · 0 fit screen · , . prev/next frame · Enter play · D duplicate',
+'프로젝트':'Projects','지금 작업은 그대로 저장돼요':'Your current work stays saved','만들기':'Create','배경색 포함':'Include background',
+'400% (벡터만 선명)':'400% (sharp for vector only)','200% (벡터만 선명)':'200% (sharp for vector only)','스프라이트 시트 PNG':'Sprite sheet PNG','모든 프레임을 한 장에 격자로 배치':'All frames in one image, laid out in a grid',
+'PNG 시퀀스 ZIP':'PNG sequence ZIP','프레임마다 한 장씩 · 아래에서 레이어별로 나눌지 골라요':'One image per frame · choose below whether to split by layer',
+'PNG 시퀀스 구성':'PNG sequence layout','레이어별: 보이는 레이어마다 폴더 하나씩':'Per layer: one folder for each visible layer','레이어별':'Per layer','레이어별 + 합친 그림':'Per layer + merged','합친 그림만':'Merged only',
+'Krita 파일 (.kra)':'Krita file (.kra)','레이어마다 Krita 레이어 하나 · 모든 프레임이 키프레임으로 들어가요':'One Krita layer per layer · every frame becomes a keyframe',
+'동영상':'Video','MP4 또는 WebM, 배경색이 포함돼요':'MP4 or WebM, background included',
+'프로젝트 목록':'Projects','실행 취소 (두 손가락 탭)':'Undo (two-finger tap)','실행 취소':'Undo','다시 실행 (Ctrl+Shift+Z)':'Redo (Ctrl+Shift+Z)','다시 실행':'Redo',
+'타임랩스 녹화':'Timelapse recording','레퍼런스 이미지':'Reference image','어니언 스킨':'Onion skin','도구':'Tools',
+'브러시 (한 번 더 누르면 종류 선택)':'Brush (tap again for options)','지우개 (한 번 더 누르면 종류 선택)':'Eraser (tap again for options)','채우기 (한 번 더 누르면 자동 채우기)':'Fill (tap again for auto fill)',
+'프레임 스크럽 — 위아래로 끌어서 넘기기':'Frame scrub — drag up and down','화면 맞춤':'Fit to screen',
+'이전 프레임 (길게 누르면 계속)':'Previous frame (hold to repeat)','이전 프레임':'Previous frame','재생':'Play','다음 프레임 (길게 누르면 계속)':'Next frame (hold to repeat)','다음 프레임':'Next frame',
+'초당 프레임':'Frames per second','프레임을 앞으로':'Move frame earlier','프레임을 뒤로':'Move frame later','왼쪽에 새 프레임':'New frame on the left','오른쪽에 새 프레임 (N)':'New frame on the right (N)','오른쪽에 새 프레임':'New frame on the right',
+'프레임 복제 (D)':'Duplicate frame (D)','프레임 복제':'Duplicate frame','프레임 삭제':'Delete frame','하나 앞으로':'One earlier','하나 뒤로':'One later',
+'픽셀로 그리는 레이어':'Layer that stores pixels','획 단위로 저장되는 레이어':'Layer that stores strokes','위로':'Up','아래로':'Down','레이어 색 방식':'Layer color mode','배경색':'Background color',
+'숨긴 레이어에는 그릴 수 없어요':"You can't draw on a hidden layer",'획 지우개는 벡터 레이어에서 쓸 수 있어요':'The stroke eraser works on vector layers','빈 곳이에요':'Nothing here',
+'S펜 버튼 누른 채 위아래: 프레임 넘기기':'Hold the pen button and move up/down to flip frames','눌러서 화면 맞춤 (회전 초기화)':'Tap to fit screen (resets rotation)',
+'브러시':'Brush','펜':'Pen','필압으로 굵기가 변해요 (B)':'Size follows pressure (B)','마커':'Marker','굵기가 일정해요 (M)':'Even width (M)','올가미 채우기':'Lasso fill','범위를 그리면 안을 채워요 (L)':'Draw an outline to fill it (L)',
+'이미 그린 획 끝 뾰족하게…':'Taper existing stroke ends…','벡터 레이어의 획 끝을 가늘게 다듬어요':'Thins the ends of strokes on a vector layer',
+'지우개':'Eraser','문지른 만큼 지워요 (E)':'Erases where you rub (E)','올가미 지우개':'Lasso eraser','범위를 그리면 안을 지워요 (K)':'Draw an outline to erase inside it (K)',
+'획 지우개':'Stroke eraser','닿은 획을 통째로 지워요 · 벡터 레이어 전용 (J)':'Removes whole strokes you touch · vector layers only (J)',
+'채우기':'Fill','버킷 채우기':'Bucket fill','누른 곳의 닫힌 영역을 채워요 (G)':'Fills the closed area you tap (G)','닫힌 선 자동 채우기…':'Auto fill closed lines…','선을 판독해서 닫힌 안쪽을 한 번에 채워요':'Detects closed lines and fills every inside area at once',
+'스포이드':'Eyedropper','이동':'Move','벡터 레이어를 선택하면 쓸 수 있어요':'Select a vector layer to use this','숨기기':'Hide','레이어 이름':'Layer name','레이어 불투명도':'Layer opacity',
+'벡터':'Vector','색':'Color','벡터 레이어':'Vector layer','레이어는 8개까지 만들 수 있어요':'You can have up to 8 layers','래스터로 변환':'Convert to raster','변환':'Convert',
+'래스터 레이어로 바꿨어요':'Converted to a raster layer','레이어가 하나뿐이에요':"It's the only layer",'레이어 삭제':'Delete layer','빈 프레임 추가':'Add empty frame',
+'마지막 프레임을 비웠어요':'Cleared the last frame','프레임 삭제 — 두 손가락 탭으로 되돌리기':'Frame deleted — two-finger tap to undo','프레임이 2장 이상 있어야 재생돼요':'You need at least 2 frames to play','정지':'Stop',
+'현재 프레임 앞':'in front of current frame','현재 프레임 뒤':'behind current frame',
+'펜 끝이 끈에 묶인 붓을 끌고 다녀요. 끈이 팽팽해질 때만 선이 나가요':'Your pen pulls the brush on a string. The line only moves once the string is tight',
+'선이 펜을 살짝 늦게 따라와요':'The line follows the pen with a slight delay','보정 없이 그린 그대로':'Exactly as drawn, no smoothing',
+'저장 대기':'Unsaved','저장 중…':'Saving…','저장됨':'Saved','이 브라우저에선 저장이 안 돼요':"Can't save in this browser",'내 작품':'My artwork','자동 저장 켜짐':'Autosave on',
+'프로젝트 여는 중…':'Opening project…','프로젝트 삭제':'Delete project','삭제했어요':'Deleted','이름 바꾸기':'Rename','프로젝트 이름':'Project name',
+'저장하지 못했어요':"Couldn't save",'저장했어요':'Saved','저장을 취소했어요':'Save canceled','파일이 너무 커요. 크기를 줄여 보세요':'The file is too large. Try a smaller size','오류':'error',
+'시트가 너무 커요. 크기를 50%로 줄여 보세요':'The sheet is too large. Try 50% size','ZIP 도구를 불러오지 못했어요':"Couldn't load the ZIP tool",'보이는 레이어가 없어요':'No visible layers',
+'Krita 파일 압축하는 중…':'Compressing Krita file…','이 환경은 동영상 저장을 지원하지 않아요':"Video export isn't supported here",'지원되는 동영상 형식이 없어요':'No supported video format',
+'만드는 중…':'Working…','내보내기에 실패했어요':'Export failed','닫힌 영역이 아니에요 · 선이 끊긴 곳이 없는지 확인해 보세요':"That area isn't closed · check for gaps in the line",
+'레이어:':'Layer:','범위':'Range','현재 프레임':'Current frame','모든 프레임':'All frames','채울 색':'Fill color','선과 같은 색':'Same as line','현재 선택한 색':'Current color',
+'틈 허용':'Gap tolerance','선이 살짝 덜 닫혀도 닫힌 걸로 봐요':'Treats nearly closed lines as closed',
+'벡터 레이어: 여러 획이 함께 만든 닫힌 영역까지 찾아서, 획 아래에 벡터 채우기 도형으로 넣어요. 다시 실행하면 이전 자동 채우기를 새로 바꿔요.':'Vector layer: finds areas closed by one or more strokes and adds vector fill shapes under the strokes. Running it again replaces the previous auto fill.',
+'래스터 레이어: 바깥과 이어지지 않는 빈 공간을 모두 찾아서 선 아래에 채워요.':'Raster layer: fills every empty area not connected to the outside, under the lines.',
+'닫힌 선 자동 채우기':'Auto fill closed lines','취소':'Cancel','선을 판독하는 중…':'Reading lines…','닫힌 선을 찾지 못했어요. 틈 허용을 늘려 보세요':'No closed lines found. Try a higher gap tolerance',
+'뾰족하게 할 끝':'Ends to taper','원래대로 (뭉툭)':'Reset (blunt)','길이':'Length','자동 채우기가 있던 프레임은 바뀐 선에 맞춰 채우기도 다시 만들어요.':'Frames with auto fill get their fill rebuilt to match the new lines.',
+'획 끝 뾰족하게':'Taper stroke ends','적용':'Apply','다듬을 펜 획이 없어요':'No pen strokes to taper','그린 내용이 없어요':'Nothing drawn yet','그림 영역':'Drawing area','여백':'Padding',
+'가장자리에 닿지 않게 남길 공간':'Space left around the edges','해상도':'Resolution','모든 프레임과 레이어에 적용돼요. 실행 취소 기록은 지워지고 되돌릴 수 없어요.':"Applies to every frame and layer. Undo history is cleared and this can't be undone.",
+' · 래스터 레이어는 확대되면서 흐려질 수 있어요':' · raster layers may get blurry when enlarged','일시정지':'Pause','이어서 녹화':'Resume recording',
+'켜 두면 획을 그리거나 고칠 때마다 한 컷씩 기록해서, 그리는 과정을 빠른 영상으로 만들어요. 작업 화면에는 표시되지 않아요.':"While on, every stroke or edit records one shot, so you can turn your process into a fast video. Nothing is shown on the canvas.",
+'타임랩스 녹화를 시작했어요':'Timelapse recording started','타임랩스를 일시정지했어요':'Timelapse paused','타임랩스 지우기':'Clear timelapse','타임랩스를 지웠어요':'Timelapse cleared','타임랩스 저장에 실패했어요':"Couldn't save the timelapse",
+'이 환경은 GIF 애니메이션을 못 읽어서 첫 장만 불러와요':"GIF animation can't be read here, so only the first frame is imported",
+'종류':'Type','한 장 그림':'Single image','스프라이트 시트':'Sprite sheet','가로 칸 수':'Columns','세로 칸 수':'Rows','사용할 장 수':'Frame count','마지막 줄이 비어 있으면 줄여 주세요':'Lower it if the last row is partly empty',
+'이미지 불러오기':'Import image','GIF 읽는 중…':'Reading GIF…','영상 읽는 중…':'Reading video…','이 파일은 불러오지 못했어요':"Couldn't import this file",
+'이미지, GIF, 스프라이트 시트, 영상을 그림 뒤에 깔아 두고 따라 그릴 수 있어요. 내보내기에는 들어가지 않아요. Claude 앱 안에서는 파일 선택 창이 안 열릴 수 있어요. 그럴 땐 이 링크를 크롬에서 열거나, 이미지를 복사해서 붙여넣기 하세요.':'Place an image, GIF, sprite sheet or video behind your drawing to trace over. It is never included in exports. You can also paste a copied image.',
+'깔아 둔 레퍼런스를 지울까요? 그림에는 영향이 없어요.':'Remove the reference? Your drawing is not affected.','레퍼런스를 지웠어요':'Reference removed','확인':'OK',
+'두 손가락 탭: 실행 취소 · 세 손가락 탭: 지우개 전환':'Two-finger tap: undo · Three-finger tap: switch eraser',
+'열려 있음':'open',
+'백업 파일로 저장':'Save backup file','백업':'Backup','앱을 지우면 작업도 지워져요. 백업 파일(.flipbook)로 저장해 두고 다른 기기에서도 불러올 수 있어요':'Uninstalling the app deletes your work. Save a backup file (.flipbook) to keep it safe or move it to another device',
+'모두 백업':'Back up all','백업 불러오기':'Restore backup','정보·라이선스':'About & license','만든 사람, 이용 조건, 후원':'Credits, license, support','보기':'View',
+};
+const EN_PAT = [
+  [/^레이어 (\d+)$/, 'Layer $1'], [/^벡터 (\d+)$/, 'Vector $1'], [/^작품 (\d+)$/, 'Artwork $1'], [/^(\d+)번 프레임$/, 'Frame $1'],
+  [/^(\d+) fps$/, '$1 fps'],
+];
+const tx = s => {
+  if(LANG !== 'en' || !s) return s;
+  const k = s.trim(); if(!k) return s;
+  let v = EN[k];
+  if(v === undefined) for(const [re, rep] of EN_PAT){ if(re.test(k)){ v = k.replace(re, rep); break; } }
+  return v === undefined ? s : s.replace(k, v);
+};
+const HANGUL = /[가-힣]/;
+const I18N_ATTRS = ['title', 'aria-label', 'placeholder'];
+function i18nNode(n){
+  if(n.nodeType === 3){ if(HANGUL.test(n.data)){ const v = tx(n.data); if(v !== n.data) n.data = v; } return; }
+  if(n.nodeType !== 1) return;
+  for(const a of I18N_ATTRS){ const s = n.getAttribute(a); if(s && HANGUL.test(s)){ const v = tx(s); if(v !== s) n.setAttribute(a, v); } }
+  if(n.tagName === 'SCRIPT' || n.tagName === 'STYLE') return;
+  for(let c = n.firstChild; c; c = c.nextSibling) i18nNode(c);
+}
+if(LANG === 'en'){
+  document.title = tx(document.title);
+  i18nNode(document.body);
+  new MutationObserver(ms => { for(const m of ms){
+    if(m.type === 'characterData') i18nNode(m.target);
+    else if(m.type === 'attributes') i18nNode(m.target);
+    else m.addedNodes.forEach(i18nNode);
+  } }).observe(document.body, { subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:I18N_ATTRS });
+}
+
 
 /* ---------- document state ---------- */
 let W = 1280, H = 720;
@@ -973,7 +1103,7 @@ function endStroke(e){
   const d = drawing; if(!d) return;
   if(d.mode==='strokeErase'){
     drawing = null;
-    if(d.hit.size){ const arr = d.f.vec[d.lid]; vecCommit(d.f, d.lid, arr.filter(it => !d.hit.has(it))); toast(`획 ${d.hit.size}개 지움`); }
+    if(d.hit.size){ const arr = d.f.vec[d.lid]; vecCommit(d.f, d.lid, arr.filter(it => !d.hit.has(it))); toast(tr(`획 ${d.hit.size}개 지움`,`Erased ${d.hit.size} strokes`)); }
     render(); return;
   }
   if(d.lasso){
@@ -1327,10 +1457,10 @@ function setTool(t){
   S.tool = t; if(g || t==='fill') lastDrawTool = t;
   const bb = $('#brushBtn'), eb = $('#eraserBtn');
   bb.innerHTML = ICONS[S.brushMode]; eb.innerHTML = ICONS[S.eraserMode];
-  bb.title = TOOL_NAMES[S.brushMode] + ' — 한 번 더 누르면 종류 선택';
-  eb.title = TOOL_NAMES[S.eraserMode] + ' — 한 번 더 누르면 종류 선택';
+  bb.title = tx(TOOL_NAMES[S.brushMode]) + tr(' — 한 번 더 누르면 종류 선택',' — tap again for options');
+  eb.title = tx(TOOL_NAMES[S.eraserMode]) + tr(' — 한 번 더 누르면 종류 선택',' — tap again for options');
   bb.classList.toggle('on', g==='brush'); eb.classList.toggle('on', g==='eraser');
-  const fb = $('#fillBtn'); if(!fb.innerHTML) fb.innerHTML = ICONS.fill; fb.title = '버킷 채우기 (G) — 한 번 더 누르면 자동 채우기'; fb.classList.toggle('on', g==='fill');
+  const fb = $('#fillBtn'); if(!fb.innerHTML) fb.innerHTML = ICONS.fill; fb.title = tr('버킷 채우기 (G) — 한 번 더 누르면 자동 채우기','Bucket fill (G) — tap again for auto fill'); fb.classList.toggle('on', g==='fill');
   $$('#rail [data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool===t));
   if($('#subPop').classList.contains('open')) buildSub($('#subPop').dataset.group);
 }
@@ -1471,7 +1601,7 @@ function syncLayerBtn(){ const L = layers.find(l=>l.id===curLayer); $('#layerNam
 function addLayer(kind){
   if(layers.length>=8){ toast('레이어는 8개까지 만들 수 있어요'); return; }
   const i = layers.findIndex(l=>l.id===curLayer);
-  const L = newLayer((kind==='vector' ? '벡터 ' : '레이어 ')+(layers.length+1), kind); layers.splice(i+1,0,L); curLayer=L.id;
+  const L = newLayer((kind==='vector' ? tr('벡터 ','Vector ') : tr('레이어 ','Layer '))+(layers.length+1), kind); layers.splice(i+1,0,L); curLayer=L.id;
   buildLayers(); syncLayerBtn(); scheduleSave();
 }
 $('#lAdd').onclick = () => addLayer('raster');
@@ -1479,7 +1609,7 @@ $('#lAddV').onclick = () => addLayer('vector');
 $('#lRaster').onclick = async () => {
   const L = layers.find(l=>l.id===curLayer); if(!L || L.kind!=='vector') return;
   closePops();
-  if(!await askConfirm('래스터로 변환', `"${L.name}"을(를) 래스터로 바꾸면 획 단위 편집이 사라져요. 되돌릴 수 없어요.`, '변환')) return;
+  if(!await askConfirm('래스터로 변환', tr(`"${L.name}"을(를) 래스터로 바꾸면 획 단위 편집이 사라져요. 되돌릴 수 없어요.`,`Converting "${L.name}" to raster removes per-stroke editing. This can't be undone.`), '변환')) return;
   L.kind = 'raster';
   frames.forEach(f => { if(f.vec) delete f.vec[L.id]; const c = f.cv[L.id]; if(c){ c._dirty = true; } });
   undoStack = undoStack.filter(u => !(u.kind==='vec' && u.lid===L.id)); redoStack = redoStack.filter(u => !(u.kind==='vec' && u.lid===L.id));
@@ -1490,7 +1620,7 @@ $('#lDel').onclick = async () => {
   if(layers.length<=1){ toast('레이어가 하나뿐이에요'); return; }
   const L = layers.find(l=>l.id===curLayer);
   closePops();
-  if(!await askConfirm('레이어 삭제', `"${L.name}"을(를) 모든 프레임에서 삭제할까요? 되돌릴 수 없어요.`, '삭제', true)) return;
+  if(!await askConfirm('레이어 삭제', tr(`"${L.name}"을(를) 모든 프레임에서 삭제할까요? 되돌릴 수 없어요.`,`Delete "${L.name}" from every frame? This can't be undone.`), '삭제', true)) return;
   const i = layers.indexOf(L); layers.splice(i,1);
   frames.forEach(f => { delete f.cv[L.id]; if(f.vec) delete f.vec[L.id]; });
   undoStack = undoStack.filter(u => u.lid!==L.id); redoStack = redoStack.filter(u => u.lid!==L.id);
@@ -1655,9 +1785,9 @@ $('#fpsSel2').onchange = e => setFps(e.target.value);
 let onionHold = null, onionLong = false;
 function setOnionFront(v, announce){
   S.onionFront = v; $('#onionPosSel').value = v ? 'front' : 'back';
-  $('#onionBtn').title = '어니언 스킨 (' + (v ? '앞' : '뒤') + ') — 길게 눌러 위치 전환';
+  $('#onionBtn').title = tr('어니언 스킨 (' + (v ? '앞' : '뒤') + ') — 길게 눌러 위치 전환', 'Onion skin (' + (v ? 'front' : 'back') + ') — long-press to switch');
   $('#onionBtn').classList.toggle('front', v);
-  if(announce) toast('어니언 스킨: ' + (v ? '현재 프레임 앞' : '현재 프레임 뒤'));
+  if(announce) toast(tr('어니언 스킨: ' + (v ? '현재 프레임 앞' : '현재 프레임 뒤'), 'Onion skin: ' + (v ? 'in front of current frame' : 'behind current frame')));
   render(); scheduleSave();
 }
 $('#onionBtn').addEventListener('pointerdown', () => { onionLong = false; onionHold = setTimeout(() => {
@@ -1710,7 +1840,7 @@ $('#penBtnSel').onchange = e => { S.penBtn = e.target.value; scheduleSave(); };
 $('#smoothIn').oninput = e => { S.smooth = +e.target.value; };
 function syncStab(){
   $('#stabSel').value = S.stab; $('#ropeIn').value = S.rope; $('#ropeEndSel').value = S.ropeEnd ? 'on' : 'off';
-  $('#ropeLbl').textContent = `화면 ${S.rope}px`;
+  $('#ropeLbl').textContent = tr(`화면 ${S.rope}px`,`${S.rope}px on screen`);
   $('#optLag').style.display = S.stab==='lag' ? '' : 'none';
   $('#optRope').style.display = $('#optRopeEnd').style.display = S.stab==='rope' ? '' : 'none';
   $('#stabDesc').textContent = S.stab==='rope' ? '펜 끝이 끈에 묶인 붓을 끌고 다녀요. 끈이 팽팽해질 때만 선이 나가요'
@@ -1725,14 +1855,14 @@ $('#rotSel').onchange = e => { S.rotate = e.target.value==='on'; if(!S.rotate &&
 const syncOnionLbl = () => $('#onionAlphaLbl').textContent = Math.round(S.onionAlpha*100) + '%';
 $('#onionAlphaIn').oninput = e => { S.onionAlpha = +e.target.value; syncOnionLbl(); render(); };
 $('#onionAlphaIn').onchange = () => scheduleSave();
-const syncFallLbl = () => { const parts = []; for(let d=1; d<=3; d++) parts.push(`${d}장 ${Math.round(Math.pow(1-S.onionFalloff, d-1)*100)}%`);
-  $('#onionFallLbl').textContent = parts.join(' · ') + ' (진하기 기준)'; };
+const syncFallLbl = () => { const parts = []; for(let d=1; d<=3; d++) parts.push(tr(`${d}장 `,`#${d} `)+`${Math.round(Math.pow(1-S.onionFalloff, d-1)*100)}%`);
+  $('#onionFallLbl').textContent = parts.join(' · ') + tr(' (진하기 기준)',' (of strength)'); };
 $('#onionFallIn').oninput = e => { S.onionFalloff = +e.target.value; syncFallLbl(); render(); };
 $('#onionFallIn').onchange = () => scheduleSave();
 $('#onionBlendSel').onchange = e => { S.onionBlend = e.target.value; render(); scheduleSave(); };
 $('#vecSmoothIn').oninput = e => { S.vecSmooth = +e.target.value; };
 $('#vecSmoothIn').onchange = () => scheduleSave();
-const syncTaperLbl = () => $('#taperLbl').textContent = `선 굵기의 ${S.taperLen}배`;
+const syncTaperLbl = () => $('#taperLbl').textContent = tr(`선 굵기의 ${S.taperLen}배`,`${S.taperLen}× line width`);
 $('#taperSel').onchange = e => { S.taper = e.target.value; scheduleSave(); };
 $('#taperIn').oninput = e => { S.taperLen = +e.target.value; syncTaperLbl(); };
 $('#taperIn').onchange = () => scheduleSave();
@@ -1749,7 +1879,7 @@ $$('.veil').forEach(v => v.addEventListener('pointerdown', e => { if(e.target===
 function freshProject(w,h){
   W=w; H=h; sizeCanvases();
   frames.forEach(f => f._t = null);
-  const L = newLayer('레이어 1'); layers=[L]; curLayer=L.id; frames=[newFrame()]; S.cur=0;
+  const L = newLayer(tr('레이어 1','Layer 1')); layers=[L]; curLayer=L.id; frames=[newFrame()]; S.cur=0;
   undoStack=[]; redoStack=[]; syncUndo(); syncLayerBtn(); buildStrip(); fit(); render(); scheduleSave(true);
 }
 
@@ -1840,7 +1970,7 @@ async function regInit(){
   try{ REG = await regGet(); }catch(e){ REG = null; }
   if(!REG || !REG.list || !REG.list.length){
     // the original single project becomes the first entry, so nothing already drawn is lost
-    REG = { cur:'p0', list:[{ id:'p0', name:'내 작품', db:'flipbook-anim', w:1280, h:720, updated:Date.now(), thumb:'' }] };
+    REG = { cur:'p0', list:[{ id:'p0', name:tr('내 작품','My artwork'), db:'flipbook-anim', w:1280, h:720, updated:Date.now(), thumb:'' }] };
     try{ await regPut(REG); }catch(e){}
   }
   curProj = REG.list.find(p => p.id===REG.cur) || REG.list[0]; curDBName = curProj.db;
@@ -1873,7 +2003,7 @@ async function enterProject(){
   frames.forEach(f => f._t = null);
   const ok = await load();
   await loadRef(); await tlLoad();
-  if(!ok){ W = curProj.w || 1280; H = curProj.h || 720; sizeCanvases(); const L = newLayer('레이어 1'); layers=[L]; curLayer=L.id; frames=[newFrame(), newFrame()]; S.cur=0; }
+  if(!ok){ W = curProj.w || 1280; H = curProj.h || 720; sizeCanvases(); const L = newLayer(tr('레이어 1','Layer 1')); layers=[L]; curLayer=L.id; frames=[newFrame(), newFrame()]; S.cur=0; }
   loaded = true;
   $('#projName').textContent = curProj.name;
   $('#colorBtn').style.background = S.color; $('#colorIn').value = S.color;
@@ -1891,18 +2021,18 @@ async function switchProject(id){
   toast('프로젝트 여는 중…');
   await flushSave(); await closeCurDB();
   curProj = target; curDBName = target.db; REG.cur = id; try{ await regPut(REG); }catch(e){}
-  await enterProject(); toast(`"${target.name}" 열었어요`);
+  await enterProject(); toast(tr(`"${target.name}" 열었어요`,`Opened "${target.name}"`));
 }
 async function createProject(w, h, name){
   const id = 'p' + Date.now().toString(36);
-  const entry = { id, name: name || ('작품 ' + (REG.list.length + 1)), db: 'flipbook-anim-' + id, w, h, updated: Date.now(), thumb:'' };
+  const entry = { id, name: name || (tr('작품 ','Artwork ') + (REG.list.length + 1)), db: 'flipbook-anim-' + id, w, h, updated: Date.now(), thumb:'' };
   REG.list.unshift(entry); try{ await regPut(REG); }catch(e){}
   await switchProject(id);
 }
 function deleteDB(name){ return new Promise(res => { const r = indexedDB.deleteDatabase(name); r.onsuccess = r.onerror = r.onblocked = () => res(); }); }
 async function deleteProject(id){
   const p = REG.list.find(x => x.id===id); if(!p) return;
-  if(!await askConfirm('프로젝트 삭제', `"${p.name}"을(를) 삭제할까요? 그림, 레퍼런스, 타임랩스가 모두 지워지고 되돌릴 수 없어요.`, '삭제', true)) return;
+  if(!await askConfirm('프로젝트 삭제', tr(`"${p.name}"을(를) 삭제할까요? 그림, 레퍼런스, 타임랩스가 모두 지워지고 되돌릴 수 없어요.`,`Delete "${p.name}"? Its drawings, reference and timelapse are all removed. This can't be undone.`), '삭제', true)) return;
   if(curProj && curProj.id===id){
     const other = REG.list.filter(x => x.id!==id).sort((a,b) => (b.updated||0)-(a.updated||0))[0];
     if(other) await switchProject(other.id); else await createProject(p.w || 1280, p.h || 720);
@@ -1920,7 +2050,7 @@ function renderProjList(){
     const im = p.thumb ? Object.assign(document.createElement('img'), { src:p.thumb, alt:'' }) : Object.assign(document.createElement('div'), { className:'noimg' });
     const meta = document.createElement('div'); meta.className = 'pm';
     const b = document.createElement('b'); b.textContent = p.name;
-    const sm = document.createElement('small'); sm.textContent = `${p.w||'?'}×${p.h||'?'}` + (p.frames ? ` · ${p.frames}프레임` : '') + ` · ${fmtDate(p.updated)}` + (isCur ? ' · 열려 있음' : '');
+    const sm = document.createElement('small'); sm.textContent = `${p.w||'?'}×${p.h||'?'}` + (p.frames ? tr(` · ${p.frames}프레임`,` · ${p.frames} frames`) : '') + ` · ${fmtDate(p.updated)}` + (isCur ? tr(' · 열려 있음',' · open') : '');
     meta.append(b, sm);
     const ren = document.createElement('button'); ren.className = 'ib'; ren.setAttribute('aria-label','이름 바꾸기');
     ren.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
@@ -1931,7 +2061,10 @@ function renderProjList(){
     const del = document.createElement('button'); del.className = 'ib'; del.setAttribute('aria-label','삭제');
     del.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
     del.onclick = async e => { e.stopPropagation(); $('#projVeil').classList.remove('open'); await deleteProject(p.id); renderProjList(); $('#projVeil').classList.add('open'); };
-    row.append(im, meta, ren, del);
+    const bk = document.createElement('button'); bk.className = 'ib'; bk.setAttribute('aria-label','백업 파일로 저장'); bk.title = tx('백업 파일로 저장');
+    bk.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
+    bk.onclick = async e => { e.stopPropagation(); $('#projVeil').classList.remove('open'); await backupProjects([p], `${safeName(p.name)}_${stamp()}.flipbook`); };
+    row.append(im, meta, bk, ren, del);
     row.onclick = async () => { $('#projVeil').classList.remove('open'); await switchProject(p.id); };
     box.appendChild(row);
   }
@@ -1939,6 +2072,75 @@ function renderProjList(){
 $('#projBtn').onclick = async () => { if(S.playing) stopPlay(); closePops(); await flushSave(); renderProjList(); $('#projVeil').classList.add('open'); };
 $('#projClose').onclick = () => $('#projVeil').classList.remove('open');
 $('#projNew').onclick = async () => { const [w,h] = $('#projNewSize').value.split('x').map(Number); $('#projVeil').classList.remove('open'); await createProject(w, h); };
+
+/* ---------- project backup (.flipbook = zip: flipbook.json + one file per stored key) ---------- */
+function dumpDB(name){ return openDB(name).then(db => new Promise((res, rej) => {
+  const t = db.transaction('kv', 'readonly'), s = t.objectStore('kv'); let keys, vals;
+  s.getAllKeys().onsuccess = e => keys = e.target.result; s.getAll().onsuccess = e => vals = e.target.result;
+  t.oncomplete = () => { db.close(); res(keys.map((k, i) => [k, vals[i]])); }; t.onerror = t.onabort = () => { db.close(); rej(t.error); };
+})); }
+async function backupProjects(list, fileName){
+  if(!window.JSZip){ toast('ZIP 도구를 불러오지 못했어요'); return; }
+  toast(tr('백업 만드는 중…','Creating backup…'));
+  try{
+    await flushSave();
+    const zip = new JSZip(), man = { format:'flipbook-backup', version:1, app:APP_VER, created:Date.now(), projects:[] };
+    for(let pi = 0; pi < list.length; pi++){
+      const p = list[pi], dir = 'p' + pi + '/', entries = [];
+      const rows = await dumpDB(p.db);
+      rows.forEach(([k, v], i) => {
+        const f = dir + i;
+        if(v instanceof Blob){ zip.file(f, v); entries.push({ k, t:'b', m:v.type || '', f }); }
+        else if(typeof v === 'string'){ zip.file(f, v); entries.push({ k, t:'s', f }); }
+        else { zip.file(f, JSON.stringify(v)); entries.push({ k, t:'j', f }); }
+      });
+      man.projects.push({ name:p.name, w:p.w, h:p.h, frames:p.frames, updated:p.updated, thumb:p.thumb || '', entries });
+    }
+    zip.file('flipbook.json', JSON.stringify(man));
+    const blob = await zip.generateAsync({ type:'blob', mimeType:'application/zip', compression:'STORE' });
+    await saveFile(fileName, blob);
+  }catch(err){ console.warn(err); toast(tr('백업을 만들지 못했어요','Backup failed')); }
+}
+async function importBackup(file){
+  if(!window.JSZip){ toast('ZIP 도구를 불러오지 못했어요'); return; }
+  let zip, man;
+  try{ zip = await JSZip.loadAsync(file); man = JSON.parse(await zip.file('flipbook.json').async('string')); }catch(e){ man = null; }
+  if(!man || man.format !== 'flipbook-backup' || !Array.isArray(man.projects) || !man.projects.length){ toast(tr('플립북 백업 파일이 아니에요','This is not a Flipbook backup file')); return; }
+  if((man.version || 1) > 1){ toast(tr('더 새로운 버전에서 만든 백업이에요. 앱을 업데이트해 주세요','This backup is from a newer version. Please update the app')); return; }
+  toast(tr('백업 불러오는 중…','Restoring backup…'));
+  await flushSave();
+  let firstId = null;
+  try{
+    for(let pi = 0; pi < man.projects.length; pi++){
+      const mp = man.projects[pi];
+      const id = 'p' + Date.now().toString(36) + pi, dbName = 'flipbook-anim-' + id;
+      const rows = [];
+      for(const e of mp.entries || []){
+        const zf = zip.file(e.f); if(!zf) continue;
+        if(e.t === 'b') rows.push([e.k, new Blob([await zf.async('arraybuffer')], { type:e.m || '' })]);
+        else if(e.t === 's') rows.push([e.k, await zf.async('string')]);
+        else rows.push([e.k, JSON.parse(await zf.async('string'))]);
+      }
+      if(!rows.some(r => r[0] === 'meta')) continue;
+      const db = await openDB(dbName);
+      await new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'), s = t.objectStore('kv');
+        for(const [k, v] of rows) s.put(v, k); t.oncomplete = res; t.onerror = t.onabort = () => rej(t.error); });
+      db.close();
+      const names = new Set(REG.list.map(p => p.name)); let name = String(mp.name || tr('복원한 작품','Restored artwork')).slice(0, 24);
+      if(names.has(name)) name = (name.slice(0, 18) + tr(' (복원)',' (restored)'));
+      REG.list.unshift({ id, name, db:dbName, w:mp.w || 1280, h:mp.h || 720, frames:mp.frames, updated:Date.now(), thumb:mp.thumb || '' });
+      if(!firstId) firstId = id;
+    }
+    try{ await regPut(REG); }catch(e){}
+  }catch(err){ console.warn(err); toast(tr('백업을 불러오지 못했어요','Couldn\'t restore the backup')); return; }
+  if(!firstId){ toast(tr('불러올 프로젝트가 없어요','No projects found in the backup')); return; }
+  await switchProject(firstId);
+  const n = man.projects.length;
+  toast(n > 1 ? tr(`프로젝트 ${n}개를 복원했어요`,`Restored ${n} projects`) : tr('프로젝트를 복원했어요','Project restored'));
+}
+$('#projBackupAll').onclick = async () => { $('#projVeil').classList.remove('open'); await backupProjects([...REG.list], `flipbook-backup_${stamp()}.flipbook`); };
+$('#projImport').onclick = () => $('#projFile').click();
+$('#projFile').onchange = async e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if(!f) return; $('#projVeil').classList.remove('open'); await importBackup(f); };
 
 /* ---------- export ---------- */
 function getDownloads(){
@@ -1960,7 +2162,7 @@ async function saveFile(name, blob){
   if(dl){
     try{ await dl.save({ filename:name, data:blob }); toast('저장했어요'); }
     catch(e){ const c = e && e.code;
-      toast(c==='declined' ? '저장을 취소했어요' : c==='too_large' ? '파일이 너무 커요. 크기를 줄여 보세요' : '저장하지 못했어요 ('+(c||'오류')+')'); }
+      toast(c==='declined' ? '저장을 취소했어요' : c==='too_large' ? '파일이 너무 커요. 크기를 줄여 보세요' : tr('저장하지 못했어요 (',"Couldn't save (")+(c||tr('오류','error'))+')'); }
     return;
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
@@ -2018,11 +2220,11 @@ async function exportSeq(scale, trans){
     for(let li=0; li<vis.length; li++){
       const L = vis[li], dir = zip.folder(`${String(li+1).padStart(2,'0')}_${safeName(L.name)}`);
       for(let i=0;i<frames.length;i++) dir.file(`${safeName(L.name)}_${num(i)}.png`, await toBlob(layerImage(frames[i], L, scale, trans)));
-      toast(`레이어 ${li+1}/${vis.length} 내보내는 중…`);
+      toast(tr(`레이어 ${li+1}/${vis.length} 내보내는 중…`,`Exporting layer ${li+1}/${vis.length}…`));
     }
   }
   if(mode !== 'layers'){
-    const dir = mode==='merged' ? zip : zip.folder('00_합친그림');
+    const dir = mode==='merged' ? zip : zip.folder(tr('00_합친그림','00_merged'));
     for(let i=0;i<frames.length;i++) dir.file(`frame_${num(i)}.png`, await toBlob(frameImage(frames[i],scale,trans)));
   }
   await saveFile(`${slug}_seq_${stamp()}.zip`, await zip.generateAsync({ type:'blob' }));
@@ -2062,7 +2264,7 @@ async function exportKra(){
     const fn = 'layer' + (num++);
     x.setTransform(1,0,0,1,0,0); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.clearRect(0,0,W,H); x.fillStyle = bg; x.fillRect(0,0,W,H);
     zip.file(base + fn, kraTiles(x.getImageData(0,0,W,H), W, H)); zip.file(base + fn + '.defaultpixel', empty);
-    entries.push(`<layer name="배경" filename="${fn}" nodetype="paintlayer" visible="1" opacity="255" compositeop="normal" locked="1" x="0" y="0" uuid="${kraUuid()}" collapsed="0" colorlabel="0" intimeline="0" onionskin="0" channelflags="" channellockflags="" colorspacename="RGBA"/>`);
+    entries.push(`<layer name="${tr('배경','Background')}" filename="${fn}" nodetype="paintlayer" visible="1" opacity="255" compositeop="normal" locked="1" x="0" y="0" uuid="${kraUuid()}" collapsed="0" colorlabel="0" intimeline="0" onionskin="0" channelflags="" channellockflags="" colorspacename="RGBA"/>`);
   }
   for(let li=0; li<layers.length; li++){
     const L = layers[li], fn = 'layer' + (num++);
@@ -2085,7 +2287,7 @@ ${keys.join('\n')}
 </keyframes>
 `);
     entries.push(`<layer name="${xmlEsc(L.name)}" filename="${fn}" nodetype="paintlayer" visible="${L.visible?1:0}" opacity="${Math.round(L.opacity*255)}" compositeop="normal" locked="0" x="0" y="0" uuid="${kraUuid()}" collapsed="0" colorlabel="0" intimeline="1" onionskin="1" keyframes="${fn}.keyframes.xml" channelflags="" channellockflags="" colorspacename="RGBA"${L.id===curLayer?' selected="true"':''}/>`);
-    toast(`Krita 레이어 ${li+1}/${layers.length} 만드는 중…`);
+    toast(tr(`Krita 레이어 ${li+1}/${layers.length} 만드는 중…`,`Building Krita layer ${li+1}/${layers.length}…`));
     await new Promise(r => setTimeout(r, 0));
   }
   const anim = `<framerate type="value" value="${S.fps}"/>\n  <range type="timerange" from="0" to="${frames.length-1}"/>\n  <currentTime type="value" value="0"/>`;
@@ -2361,7 +2563,7 @@ async function openAutoFill(){
   if(!list.length){ toast('닫힌 선을 찾지 못했어요. 틈 허용을 늘려 보세요'); return; }
   pushUndo(list.length===1 ? list[0] : { kind:'multi', list });
   render(); scheduleSave();
-  toast(`${list.length}개 프레임을 채웠어요 · 두 손가락 탭으로 되돌리기`);
+  toast(tr(`${list.length}개 프레임을 채웠어요 · 두 손가락 탭으로 되돌리기`,`Filled ${list.length} frame(s) · two-finger tap to undo`));
 }
 
 /* ---------- taper existing strokes ---------- */
@@ -2376,7 +2578,7 @@ async function openTaper(){
     <p class="muted">자동 채우기가 있던 프레임은 바뀐 선에 맞춰 채우기도 다시 만들어요.</p>`;
   box.querySelector('b').textContent = L.name;
   const len = box.querySelector('#tpLen'), lbl = box.querySelector('#tpLbl');
-  len.value = S.taperLen; const sync = () => lbl.textContent = `선 굵기의 ${len.value}배`; len.oninput = sync; sync();
+  len.value = S.taperLen; const sync = () => lbl.textContent = tr(`선 굵기의 ${len.value}배`,`${len.value}× line width`); len.oninput = sync; sync();
   box.querySelector('#tpMode').value = S.taper==='off' ? 'both' : S.taper;
   const ok = await dialog('획 끝 뾰족하게', box, [{ label:'취소', value:null }, { label:'적용', value:'go', primary:true }]);
   if(ok!=='go') return;
@@ -2400,7 +2602,7 @@ async function openTaper(){
   }
   if(!list.length){ toast('다듬을 펜 획이 없어요'); return; }
   pushUndo(list.length===1 ? list[0] : { kind:'multi', list });
-  render(); scheduleSave(); toast(`획 ${count}개를 다듬었어요`);
+  render(); scheduleSave(); toast(tr(`획 ${count}개를 다듬었어요`,`Tapered ${count} strokes`));
 }
 
 /* ---------- crop to square & resize to 256 / 512 / 1024 ---------- */
@@ -2430,10 +2632,10 @@ async function openCrop(){
     const side = Math.ceil(Math.max(bw,bh) * (1 + 2*(+pad.value)));
     const best = sizes.reduce((a,b) => Math.abs(Math.log(b/side)) < Math.abs(Math.log(a/side)) ? b : a);
     const keep = sel.value;
-    sel.innerHTML = `<option value="auto">자동 (${best}×${best})</option>` + sizes.map(z => `<option value="${z}">${z}×${z}</option>`).join('');
+    sel.innerHTML = `<option value="auto">${tr('자동','Auto')} (${best}×${best})</option>` + sizes.map(z => `<option value="${z}">${z}×${z}</option>`).join('');
     sel.value = keep && [...sel.options].some(o=>o.value===keep) ? keep : 'auto';
     const t = sel.value==='auto' ? best : +sel.value;
-    info.textContent = `정사각 ${side}×${side}px 로 자른 뒤 ${t}×${t}로 ${t>=side ? '확대' : '축소'} (${Math.round(t/side*100)}%)` + (t>side*1.2 ? ' · 래스터 레이어는 확대되면서 흐려질 수 있어요' : '');
+    info.textContent = tr(`정사각 ${side}×${side}px 로 자른 뒤 ${t}×${t}로 ${t>=side ? '확대' : '축소'} (${Math.round(t/side*100)}%)`,`Crop to ${side}×${side}px square, then ${t>=side ? 'enlarge' : 'shrink'} to ${t}×${t} (${Math.round(t/side*100)}%)`) + (t>side*1.2 ? ' · 래스터 레이어는 확대되면서 흐려질 수 있어요' : '');
     return { side, target:t };
   };
   pad.onchange = update; sel.onchange = update; update();
@@ -2470,7 +2672,7 @@ async function openCrop(){
   for(const f of frames) if(f.vec) for(const lid in f.vec) if(isVec(lid)) rebuildVec(f, lid);
   undoStack = []; redoStack = []; syncUndo();
   buildStrip(); fit(); render(); scheduleSave(true);
-  toast(`${target}×${target}로 바꿨어요`);
+  toast(tr(`${target}×${target}로 바꿨어요`,`Resized to ${target}×${target}`));
 }
 $('#cropBtn').onclick = openCrop;
 
@@ -2500,7 +2702,7 @@ async function tlLoad(){ try{ const m = await kvGet('tlmeta'); if(m) Object.assi
 function syncRec(){
   $('#recBtn').classList.toggle('rec', TL.on); $('#recCount').textContent = TL.n > 999 ? '999+' : TL.n;
   $('#recToggle').textContent = TL.on ? '일시정지' : (TL.n ? '이어서 녹화' : '녹화 시작');
-  $('#recInfo').textContent = TL.n ? `${TL.n}컷 기록됨${TL.on ? ' · 녹화 중 (획을 그릴 때마다 한 컷)' : ' · 일시정지'}` : '켜 두면 획을 그리거나 고칠 때마다 한 컷씩 기록해서, 그리는 과정을 빠른 영상으로 만들어요. 작업 화면에는 표시되지 않아요.';
+  $('#recInfo').textContent = TL.n ? tr(`${TL.n}컷 기록됨${TL.on ? ' · 녹화 중 (획을 그릴 때마다 한 컷)' : ' · 일시정지'}`,`${TL.n} shots recorded${TL.on ? ' · recording (one shot per stroke)' : ' · paused'}`) : '켜 두면 획을 그리거나 고칠 때마다 한 컷씩 기록해서, 그리는 과정을 빠른 영상으로 만들어요. 작업 화면에는 표시되지 않아요.';
   $('#recExport').disabled = $('#recClear').disabled = !TL.n;
 }
 $('#recBtn').addEventListener('click', e => { e.stopPropagation(); syncRec(); openPop($('#recPop'), e.currentTarget, 'down'); });
@@ -2510,7 +2712,7 @@ $('#recToggle').onclick = async () => {
 };
 $('#recClear').onclick = async () => {
   closePops();
-  if(!await askConfirm('타임랩스 지우기', `기록된 ${TL.n}컷을 지울까요? 그림에는 영향이 없어요.`, '지우기', true)) return;
+  if(!await askConfirm('타임랩스 지우기', tr(`기록된 ${TL.n}컷을 지울까요? 그림에는 영향이 없어요.`,`Clear ${TL.n} recorded shots? Your drawing is not affected.`), '지우기', true)) return;
   try{ const ks = await kvKeys(); for(const k of ks) if(String(k).startsWith('tl:')) await kvDel(k); }catch(e){}
   TL.n = 0; await kvPut('tlmeta', { ...TL }).catch(()=>{}); syncRec(); toast('타임랩스를 지웠어요');
 };
@@ -2544,7 +2746,7 @@ $('#recExport').onclick = async () => {
       const t0 = performance.now();
       if(i !== last){ await show(i); last = i; }
       paint(); track.requestFrame && track.requestFrame();
-      if(f % 60 === 0) toast(`타임랩스 만드는 중… ${Math.round(f/total*100)}%`);
+      if(f % 60 === 0) toast(tr('타임랩스 만드는 중… ','Making timelapse… ')+`${Math.round(f/total*100)}%`);
       await sleep(Math.max(0, 1000/FPS - (performance.now()-t0)));
     }
     if(last !== TL.n-1) await show(TL.n-1);
@@ -2598,10 +2800,10 @@ async function decodeVideo(file){
     const t = Math.min(v.duration - 0.001, i / fps);
     await new Promise(res => { const done = () => { v.removeEventListener('seeked', done); res(); }; v.addEventListener('seeked', done); v.currentTime = t; });
     out.push(toFrameCanvas(v, 0, 0, v.videoWidth, v.videoHeight));
-    if(i % 10 === 0) toast(`영상 프레임 꺼내는 중… ${i+1}/${n}`);
+    if(i % 10 === 0) toast(tr('영상 프레임 꺼내는 중… ','Extracting video frames… ')+`${i+1}/${n}`);
   }
   URL.revokeObjectURL(url);
-  if(Math.round(v.duration*fps) > REF_MAX_FRAMES) toast(`앞쪽 ${REF_MAX_FRAMES}장만 불러왔어요`);
+  if(Math.round(v.duration*fps) > REF_MAX_FRAMES) toast(tr(`앞쪽 ${REF_MAX_FRAMES}장만 불러왔어요`,`Imported only the first ${REF_MAX_FRAMES} frames`));
   return out;
 }
 async function decodeStill(file){
@@ -2634,7 +2836,7 @@ async function importRef(file){
     else fr = await decodeStill(file);
     if(!fr || !fr.length) return;
     REF.frames = fr; REF.fw = fr[0].width; REF.fh = fr[0].height; REF.offset = 0; REF.vis = true; REF.name = file.name;
-    refFit(); render(); saveRef(); toast(`레퍼런스 ${fr.length}장을 깔았어요`);
+    refFit(); render(); saveRef(); toast(tr(`레퍼런스 ${fr.length}장을 깔았어요`,`Reference placed (${fr.length} frames)`));
   }catch(err){ console.warn(err); toast('이 파일은 불러오지 못했어요'); }
 }
 async function saveRef(){
@@ -2661,7 +2863,7 @@ async function loadRef(){
 }
 function syncRefUI(){
   const has = REF.frames.length > 0;
-  $('#refInfo').textContent = has ? `${REF.name || '레퍼런스'} · ${REF.frames.length}장 · 지금 ${refIndex()+1}번째 장` : '이미지, GIF, 스프라이트 시트, 영상을 그림 뒤에 깔아 두고 따라 그릴 수 있어요. 내보내기에는 들어가지 않아요. Claude 앱 안에서는 파일 선택 창이 안 열릴 수 있어요. 그럴 땐 이 링크를 크롬에서 열거나, 이미지를 복사해서 붙여넣기 하세요.';
+  $('#refInfo').textContent = has ? tr(`${REF.name || '레퍼런스'} · ${REF.frames.length}장 · 지금 ${refIndex()+1}번째 장`,`${REF.name || 'Reference'} · ${REF.frames.length} frames · showing #${refIndex()+1}`) : '이미지, GIF, 스프라이트 시트, 영상을 그림 뒤에 깔아 두고 따라 그릴 수 있어요. 내보내기에는 들어가지 않아요. Claude 앱 안에서는 파일 선택 창이 안 열릴 수 있어요. 그럴 땐 이 링크를 크롬에서 열거나, 이미지를 복사해서 붙여넣기 하세요.';
   $('#refCtl').style.display = has ? '' : 'none'; $('#refEditBtn').style.display = $('#refFit').style.display = has ? '' : 'none';
   $('#refVis').textContent = REF.vis ? '켬' : '끔'; $('#refVis').classList.toggle('primary', REF.vis);
   $('#refOp').value = REF.op; $('#refOpV').textContent = Math.round(REF.op*100)+'%';
@@ -2761,8 +2963,43 @@ function askText(title, value){
   return dialog(title, inp, [{ label:'취소', value:null }, { label:'확인', value:'ok', primary:true }]).then(v => v==='ok' ? inp.value.trim() : null);
 }
 
-const APP_VER = '2026.10.19 · 새 아이콘 v2 (앱)';
-$('#verLine').textContent = '버전 ' + APP_VER;
+const APP_VER = '1.0.0 (2026.11.20)';
+$('#verLine').textContent = tr('버전 ','Version ') + APP_VER;
+const ITCH_URL = 'https://hun0fx.itch.io/flipbook';
+$('#aboutBtn').onclick = async () => {
+  $('#setVeil').classList.remove('open');
+  const box = document.createElement('div'); box.className = 'about';
+  box.innerHTML = tr(`
+    <p><b>Flipbook</b> · 버전 ${APP_VER}<br>만든 사람 <b>hun0fx</b> (게임 VFX 아티스트)</p>
+    <p>플립북은 무료예요. 마음에 드셨다면 itch.io 페이지에서 원하는 만큼 후원해 주시면 다음 업데이트에 큰 힘이 돼요.</p>
+    <p><a href="${ITCH_URL}" target="_blank" rel="noopener">${ITCH_URL.replace('https://','')}</a></p>
+    <h4>이용 조건</h4>
+    <ul><li>개인·상업 작업 모두 무료로 쓸 수 있어요. 플립북으로 만든 그림과 내보낸 파일의 권리는 모두 만든 분에게 있어요.</li>
+    <li>앱 자체를 다시 배포하거나 판매하거나 고쳐서 내놓는 건 안 돼요. 친구에게는 itch.io 링크를 알려 주세요.</li>
+    <li>있는 그대로 제공되며, 작업이 사라지는 등의 손해에 대해 책임지지 않아요. 중요한 작업은 프로젝트 목록의 '백업'으로 꼭 저장해 두세요.</li>
+    <li>작업은 이 기기 안에만 저장되고, 어떤 정보도 밖으로 보내지 않아요.</li></ul>
+    <h4>오픈소스</h4>
+    <p class="muted">JSZip (MIT) · Capacitor (MIT) · Electron (MIT, Chromium 라이선스 포함) · IBM Plex Sans KR (SIL OFL 1.1)</p>
+    <p class="muted">© 2026 hun0fx. All rights reserved.</p>`, `
+    <p><b>Flipbook</b> · version ${APP_VER}<br>Made by <b>hun0fx</b> (game VFX artist)</p>
+    <p>Flipbook is free. If you enjoy it, a tip on the itch.io page helps a lot with future updates.</p>
+    <p><a href="${ITCH_URL}" target="_blank" rel="noopener">${ITCH_URL.replace('https://','')}</a></p>
+    <h4>License</h4>
+    <ul><li>Free for personal and commercial work. You own everything you draw and export with Flipbook.</li>
+    <li>Please don't redistribute, resell or repackage the app itself. Share the itch.io link instead.</li>
+    <li>Provided "as is", without warranty. Back up important work with "Backup" in the project list.</li>
+    <li>Your work is stored only on this device. Flipbook collects and sends no data.</li></ul>
+    <h4>Open source</h4>
+    <p class="muted">JSZip (MIT) · Capacitor (MIT) · Electron (MIT, includes Chromium licenses) · IBM Plex Sans KR (SIL OFL 1.1)</p>
+    <p class="muted">© 2026 hun0fx. All rights reserved.</p>`);
+  try{ if(window.Capacitor && window.Capacitor.isNativePlatform()) box.querySelectorAll('a').forEach(x => x.removeAttribute('target')); }catch(_){}
+  await dialog(tr('정보·라이선스','About & license'), box, [{ label:tr('닫기','Close'), value:true, primary:true }]);
+};
+$('#langSel').value = LANG;
+$('#langSel').onchange = async e => {
+  try{ localStorage.setItem(LANG_KEY, e.target.value); }catch(_){}
+  await flushSave(); location.reload();
+};
 
 /* ---------- toast ---------- */
 let toastT = null;

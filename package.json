@@ -1,10 +1,10 @@
 {
   "name": "flipbook",
   "version": "1.0.0",
-  "description": "플립북 — 프레임 애니메이션 드로잉",
+  "description": "Flipbook — frame-by-frame animation drawing",
   "main": "electron/main.js",
   "author": "hun0fx",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE.txt",
   "scripts": {
     "prep": "node -e \"require('fs').copyFileSync('node_modules/jszip/dist/jszip.min.js','www/jszip.min.js')\"",
     "desktop": "npm run prep && electron .",
@@ -48,7 +48,9 @@
     "nsis": {
       "artifactName": "Flipbook-${version}-setup.exe",
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+      "allowToChangeInstallationDirectory": true,
+      "license": "LICENSE.txt"
+    },
+    "copyright": "© 2026 hun0fx"
   }
 }

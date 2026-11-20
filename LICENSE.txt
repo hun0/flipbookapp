@@ -1,0 +1,35 @@
+Flipbook - End User License
+Copyright (c) 2026 hun0fx. All rights reserved.
+
+Flipbook is free software in the "freeware" sense: you may download and use it
+at no cost. Tips on the official itch.io page are welcome but optional.
+
+1. Use
+   You may install and use Flipbook on any number of your own devices, for
+   personal or commercial projects.
+
+2. Your work
+   Everything you draw and export with Flipbook belongs to you. No credit or
+   attribution is required.
+
+3. Restrictions
+   You may not redistribute, resell, rent, sublicense or repackage Flipbook
+   itself (the app, installer or APK), or publish modified versions of it.
+   Please share the official itch.io link instead:
+   https://hun0fx.itch.io/flipbook
+
+4. Privacy
+   Flipbook stores your projects only on your device. It does not collect or
+   transmit any personal data.
+
+5. No warranty
+   Flipbook is provided "as is", without warranty of any kind. The author is
+   not liable for any damages, including loss of work. Use the in-app Backup
+   feature to keep copies of important projects.
+
+Third-party software included:
+- JSZip (MIT License) - https://stuk.github.io/jszip/
+- Capacitor (MIT License) - https://capacitorjs.com/ (Android build)
+- Electron (MIT License, includes Chromium and its licenses) -
+  https://www.electronjs.org/ (Windows build)
+- IBM Plex Sans KR font (SIL Open Font License 1.1)
