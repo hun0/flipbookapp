@@ -1,6 +1,6 @@
 {
   "name": "flipbook",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Flipbook — frame-by-frame animation drawing",
   "main": "electron/main.js",
   "author": "hun0fx",

@@ -11,6 +11,7 @@ function createWindow () {
   win.loadFile(path.join(__dirname, '..', 'www', 'index.html'));
   // external links open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
+  win.webContents.on('will-navigate', (e, url) => { if(/^https?:/i.test(url)){ e.preventDefault(); shell.openExternal(url); } });
 }
 
 app.whenReady().then(createWindow);

@@ -33,3 +33,8 @@ Third-party software included:
 - Electron (MIT License, includes Chromium and its licenses) -
   https://www.electronjs.org/ (Windows build)
 - IBM Plex Sans KR font (SIL Open Font License 1.1)
+
+Made by hun0fx - Game VFX Artist
+Tools & VFX packs: https://hun0fx.itch.io/
+X: https://x.com/hun0fx
+Portfolio: https://www.artstation.com/hunyoung04

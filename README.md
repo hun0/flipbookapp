@@ -27,3 +27,17 @@ Releases 페이지는 폰 브라우저에서도 바로 다운로드돼요.
 - APK는 디버그 서명이라 설치할 때 "출처를 알 수 없는 앱 설치"를 허용해야 해요. Play 스토어에 올리려면 정식 서명 키가 따로 필요해요.
 - 윈도우 EXE는 코드 서명이 없어서 처음 실행할 때 SmartScreen 경고가 뜰 수 있어요. "추가 정보 → 실행"을 누르면 돼요.
 - 앱 아이콘은 기본 아이콘이에요.
+
+---
+
+## Made by hun0fx — Game VFX Artist
+- Tools & VFX packs (itch.io): https://hun0fx.itch.io/
+- Unreal (Fab): https://www.fab.com/sellers/Hun0VFX
+- Unity Asset Store: https://assetstore.unity.com/publishers/116849
+- X: https://x.com/hun0fx
+- Portfolio (ArtStation): https://www.artstation.com/hunyoung04
+- LinkedIn: https://www.linkedin.com/in/hunyoungha
+- Course "스파인으로 끝내는 카툰 이펙트" (Coloso)
+  - KR https://coloso.co.kr/products/gamegraphic-hahunyoung
+  - EN https://coloso.global/en/products/gamegraphic-hahunyoung-us
+  - JP https://coloso.jp/products/gamegraphic-hahunyoung-jp

@@ -40,6 +40,7 @@ button,select,input{font:inherit;color:inherit}
 #projName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:480px){ #saveState{display:none} #projBtn{max-width:30vw} }
 #projList{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.madeby{margin:0 0 8px}.madeby a{color:var(--accent);text-decoration:none;font-weight:600}.madeby a:hover{text-decoration:underline}.credits{margin:0;padding-left:18px;line-height:1.6;font-size:13px}.credits a{color:var(--accent);word-break:break-all}.credits ul{padding-left:16px;margin:2px 0 0}
 .about p{margin:0 0 10px;line-height:1.5}.about h4{margin:14px 0 6px;font-size:13px}.about ul{margin:0;padding-left:18px;line-height:1.5;font-size:13px}.about li{margin-bottom:4px}.about a{color:var(--accent)}.about .muted{font-size:12px;color:var(--muted)}
 .prow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);cursor:pointer}
 .prow.on{border-color:var(--accent)}
@@ -411,6 +412,7 @@ input[type=color]{width:48px;height:34px;border:1px solid var(--line);border-rad
     <div class="opt"><div class="lbl">정보·라이선스<small>만든 사람, 이용 조건, 후원</small></div><button class="tb" id="aboutBtn">보기</button></div>
     <div class="acts"><button class="tb" id="newBtn">새로 만들기</button><button class="tb primary" id="setClose">닫기</button></div>
     <p id="verLine" style="font-weight:600;color:var(--ink)"></p>
+    <p class="madeby"><a href="#" id="madeByLink">Made by hun0fx — Game VFX Artist</a></p>
     <p>세 손가락 탭: 브러시 ↔ 지우개 전환 · 두 손가락 탭: 실행 취소<br>단축키: B 펜 · M 마커 · L 올가미 채우기 · K 올가미 지우개 · J 획 지우개 · X 브러시/지우개 전환 · E 지우개 · G 채우기 · I 스포이드 · R 회전 · 0 화면 맞춤 · , . 프레임 이동 · Enter 재생 · D 복제</p>
   </div>
 </div>
@@ -547,7 +549,7 @@ const EN = {
 '두 손가락 탭: 실행 취소 · 세 손가락 탭: 지우개 전환':'Two-finger tap: undo · Three-finger tap: switch eraser',
 '열려 있음':'open',
 '백업 파일로 저장':'Save backup file','백업':'Backup','앱을 지우면 작업도 지워져요. 백업 파일(.flipbook)로 저장해 두고 다른 기기에서도 불러올 수 있어요':'Uninstalling the app deletes your work. Save a backup file (.flipbook) to keep it safe or move it to another device',
-'모두 백업':'Back up all','백업 불러오기':'Restore backup','정보·라이선스':'About & license','만든 사람, 이용 조건, 후원':'Credits, license, support','보기':'View',
+'모두 백업':'Back up all','백업 불러오기':'Restore backup','정보·라이선스':'About & license','만든 사람, 이용 조건, 후원':'Credits, license, support','만든 사람':'Credits','보기':'View',
 };
 const EN_PAT = [
   [/^레이어 (\d+)$/, 'Layer $1'], [/^벡터 (\d+)$/, 'Vector $1'], [/^작품 (\d+)$/, 'Artwork $1'], [/^(\d+)번 프레임$/, 'Frame $1'],
@@ -2963,9 +2965,34 @@ function askText(title, value){
   return dialog(title, inp, [{ label:'취소', value:null }, { label:'확인', value:'ok', primary:true }]).then(v => v==='ok' ? inp.value.trim() : null);
 }
 
-const APP_VER = '1.0.0 (2026.11.20)';
+const APP_VER = '1.0.1 (2026.11.20)';
 $('#verLine').textContent = tr('버전 ','Version ') + APP_VER;
 const ITCH_URL = 'https://hun0fx.itch.io/flipbook';
+/* ---------- creator credits (hun0fx) ---------- */
+const CREDIT_LINKS = [
+  ['Tools & VFX packs (itch.io)', 'https://hun0fx.itch.io/'],
+  ['Unreal (Fab)', 'https://www.fab.com/sellers/Hun0VFX'],
+  ['Unity Asset Store', 'https://assetstore.unity.com/publishers/116849'],
+  ['X', 'https://x.com/hun0fx'],
+  ['Portfolio (ArtStation)', 'https://www.artstation.com/hunyoung04'],
+  ['LinkedIn', 'https://www.linkedin.com/in/hunyoungha'],
+];
+const COLOSO_LINKS = [['KR', 'https://coloso.co.kr/products/gamegraphic-hahunyoung'], ['EN', 'https://coloso.global/en/products/gamegraphic-hahunyoung-us'], ['JP', 'https://coloso.jp/products/gamegraphic-hahunyoung-jp']];
+const extA = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+function creditsHTML(){
+  return `<p><b>Made by hun0fx — Game VFX Artist</b></p><ul class="credits">`
+    + CREDIT_LINKS.map(([k, u]) => `<li>${k}: ${extA(u, u.replace('https://', ''))}</li>`).join('')
+    + `<li>Course "스파인으로 끝내는 카툰 이펙트" (Coloso)<ul>` + COLOSO_LINKS.map(([k, u]) => `<li>${k} ${extA(u, u.replace('https://', ''))}</li>`).join('') + `</ul></li></ul>`;
+}
+// links open in the system browser: Electron catches target=_blank, Capacitor opens external URLs it navigates to
+function extLinks(box){ try{ if(window.Capacitor && window.Capacitor.isNativePlatform()) box.querySelectorAll('a[target]').forEach(x => x.removeAttribute('target')); }catch(_){} }
+$('#madeByLink').onclick = async e => {
+  e.preventDefault(); $('#setVeil').classList.remove('open');
+  const box = document.createElement('div'); box.className = 'about'; box.innerHTML = creditsHTML(); extLinks(box);
+  await dialog('hun0fx', box, [{ label:tr('닫기','Close'), value:true, primary:true }]);
+};
+// first launch: one quiet line, shown once
+try{ if(!localStorage.getItem('flipbook-credit-seen')){ localStorage.setItem('flipbook-credit-seen', '1'); setTimeout(() => toast('Flipbook · Made by hun0fx — Game VFX Artist · hun0fx.itch.io', 4500), 2500); } }catch(_){}
 $('#aboutBtn').onclick = async () => {
   $('#setVeil').classList.remove('open');
   const box = document.createElement('div'); box.className = 'about';
@@ -2973,6 +3000,7 @@ $('#aboutBtn').onclick = async () => {
     <p><b>Flipbook</b> · 버전 ${APP_VER}<br>만든 사람 <b>hun0fx</b> (게임 VFX 아티스트)</p>
     <p>플립북은 무료예요. 마음에 드셨다면 itch.io 페이지에서 원하는 만큼 후원해 주시면 다음 업데이트에 큰 힘이 돼요.</p>
     <p><a href="${ITCH_URL}" target="_blank" rel="noopener">${ITCH_URL.replace('https://','')}</a></p>
+    <h4>만든 사람</h4>${creditsHTML()}
     <h4>이용 조건</h4>
     <ul><li>개인·상업 작업 모두 무료로 쓸 수 있어요. 플립북으로 만든 그림과 내보낸 파일의 권리는 모두 만든 분에게 있어요.</li>
     <li>앱 자체를 다시 배포하거나 판매하거나 고쳐서 내놓는 건 안 돼요. 친구에게는 itch.io 링크를 알려 주세요.</li>
@@ -2984,6 +3012,7 @@ $('#aboutBtn').onclick = async () => {
     <p><b>Flipbook</b> · version ${APP_VER}<br>Made by <b>hun0fx</b> (game VFX artist)</p>
     <p>Flipbook is free. If you enjoy it, a tip on the itch.io page helps a lot with future updates.</p>
     <p><a href="${ITCH_URL}" target="_blank" rel="noopener">${ITCH_URL.replace('https://','')}</a></p>
+    <h4>Credits</h4>${creditsHTML()}
     <h4>License</h4>
     <ul><li>Free for personal and commercial work. You own everything you draw and export with Flipbook.</li>
     <li>Please don't redistribute, resell or repackage the app itself. Share the itch.io link instead.</li>
@@ -2992,7 +3021,7 @@ $('#aboutBtn').onclick = async () => {
     <h4>Open source</h4>
     <p class="muted">JSZip (MIT) · Capacitor (MIT) · Electron (MIT, includes Chromium licenses) · IBM Plex Sans KR (SIL OFL 1.1)</p>
     <p class="muted">© 2026 hun0fx. All rights reserved.</p>`);
-  try{ if(window.Capacitor && window.Capacitor.isNativePlatform()) box.querySelectorAll('a').forEach(x => x.removeAttribute('target')); }catch(_){}
+  extLinks(box);
   await dialog(tr('정보·라이선스','About & license'), box, [{ label:tr('닫기','Close'), value:true, primary:true }]);
 };
 $('#langSel').value = LANG;
@@ -3003,7 +3032,7 @@ $('#langSel').onchange = async e => {
 
 /* ---------- toast ---------- */
 let toastT = null;
-function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
+function toast(msg, ms = 1800){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms); }
 
 /* ---------- boot ---------- */
 (async function boot(){
