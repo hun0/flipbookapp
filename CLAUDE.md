@@ -39,6 +39,7 @@ UI 문구는 코드에 한국어로 쓰고, 영어는 `EN` 사전(한국어 원�
 - 저장: 프로젝트 DB의 store `kv`. 키는 `meta`, `프레임id:레이어id`(래스터 PNG), `프레임id:레이어id:v`(벡터 JSON), `ref:*`·`refmeta`(레퍼런스), `tl:*`·`tlmeta`(타임랩스). 프로젝트 저장 정리 단계에서 `ref`·`tl`로 시작하는 키는 지우지 않는다. 설정 기본값을 바꿀 때는 `sv` 값으로 한 번만 이주(migration)한다.
 - 다국어: `LANG`, `tr(ko, en)`(변수가 들어간 문구), `tx(s)`(사전 조회), `EN` 사전 + `EN_PAT`(레이어 N 등). 영어 모드에서는 `MutationObserver`가 화면에 들어오는 한국어 텍스트·title·aria-label을 사전대로 바꾼다. **새 문구를 넣으면 고정 문구는 `EN`에 추가, 변수가 섞인 문구는 `tr()`로 감싼다.** 헤드리스로 영어 모드 화면을 훑어 한글이 남았는지 확인한다.
 - 백업: `.flipbook` 파일 = zip(`flipbook.json` 목록 + 프로젝트 DB의 모든 키를 파일 하나씩, 형식 `flipbook-backup` v1). `backupProjects(list, fileName)`, `importBackup(file)`은 새 프로젝트로 복원한다(이름이 겹치면 '(복원)').
+- 제작자 홍보: `CREDIT_LINKS`·`COLOSO_LINKS`·`creditsHTML()`(정보 창 + 설정 하단 'Made by hun0fx' 링크), 첫 실행 때 한 번만 토스트(`flipbook-credit-seen`). README·LICENSE 맨 아래에도 같은 목록. 외부 링크는 `extLinks()` + Electron `setWindowOpenHandler`/`will-navigate`로 기본 브라우저에서 열린다.
 - 대화창: 브라우저 `confirm` / `prompt`는 쓰지 않는다(웹 뷰어에서 막힘). `dialog()`, `askConfirm()`, `askText()`를 쓴다.
 
 ## 지금 있는 기능
